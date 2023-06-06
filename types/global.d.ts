@@ -6,7 +6,15 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       DB_CONNECTION_URL: string;
+      SESSION_SECRET: string;
       PORT?: string;
+    }
+  }
+
+  namespace Express {
+    interface User {
+      username: string;
+      _id: Types.ObjectId;
     }
   }
 
@@ -15,7 +23,7 @@ declare global {
   }
 
   interface BlogPost {
-    _id: string;
+    _id: Types.ObjectId;
     date_created: Date | string;
     title: string;
     slug: string;
@@ -30,7 +38,7 @@ declare global {
   }
 
   interface Comment {
-    _id: string;
+    _id: Types.ObjectId;
     date_created: Date | string;
     author: Types.ObjectId;
     content: string;
@@ -40,18 +48,19 @@ declare global {
   }
 
   interface User {
-    _id: string;
+    _id: Types.ObjectId;
     date_created: Date | string;
     username: string;
     email: string;
-    password: string;
+    hash: string;
+    salt: string;
     first_name: string;
     last_name: string;
     posts: Types.ObjectId[]; // post ids
   }
 
   interface Tag {
-    _id: string;
+    _id: Types.ObjectId;
     name: string;
   }
 }
