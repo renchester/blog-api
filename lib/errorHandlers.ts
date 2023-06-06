@@ -23,9 +23,7 @@ export const errorResponder = (
   res.header('Content-Type', 'application/json');
 
   const status = err.status || 400;
-  res
-    .status(status)
-    .json({ errorMessage: err.message || 'Something went wrong' });
+  res.status(status).json({ error: err.message || 'Something went wrong' });
 };
 
 // Fallback middleware for returning 404 error
@@ -35,5 +33,5 @@ export const invalidPathHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  res.status(404).json({ errorMessage: 'Invalid Path' });
+  res.status(404).json({ error: 'Invalid Path' });
 };
