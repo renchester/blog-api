@@ -15,14 +15,18 @@ export const errorLogger = (
 // Error handling middleware function reads the error message
 // and sends back a response in JSON format
 export const errorResponder = (
-  err: ResponseError,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   res.header('Content-Type', 'application/json');
-
   const status = err.status || 400;
+
+  if (err.name === 'CastError') {
+    res.status(status).json({ error: `Invalid ${err.path}: ${err.value}` });
+  }
+
   res.status(status).json({ error: err.message || 'Something went wrong' });
 };
 
