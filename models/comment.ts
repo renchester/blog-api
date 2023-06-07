@@ -2,7 +2,7 @@ import mongoose, { Model } from 'mongoose';
 
 const Schema = mongoose.Schema;
 
-const CommentSchema = new Schema<Comment, Model<Comment>>({
+export const CommentSchema = new Schema<Comment, Model<Comment>>({
   date_created: { type: Date, default: Date.now() },
   author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   content: { type: String, required: true },
