@@ -8,6 +8,8 @@ import { checkPasswordValidity, genPassword } from '../utils/passwordUtils';
 const validateUsername = () =>
   body('username', 'Username must be between 6 and 30 characters')
     .trim()
+    .notEmpty()
+    .withMessage('Username cannot be empty')
     .isLength({ min: 6, max: 30 })
     .escape()
     .bail()
@@ -22,6 +24,7 @@ const validateEmail = () =>
   body('email', 'Invalid email format')
     .trim()
     .notEmpty()
+    .withMessage('Email cannot be empty')
     .escape()
     .bail()
     .isEmail()
