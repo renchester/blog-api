@@ -1,4 +1,10 @@
 import crypto from 'crypto';
+import jsonwebtoken from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const PRIV_KEY = process.env.PRIV_KEY;
 
 /**
  *
@@ -43,4 +49,29 @@ export const checkPasswordValidity = (
     .toString('hex');
 
   return hash === hashVerification;
+};
+
+/**
+ * @param {*} user - The user object.  We need this to set the JWT `sub` payload property to the MongoDB user ID
+ */
+
+export const issueJWT = (user: User) => {
+  const _id = user._id;
+
+  const expiresIn = '1d';
+
+  const payload = {
+    sub: _id,
+    iat: Date.now(),
+  };
+
+  const signedToken = jsonwebtoken.sign(payload, PRIV_KEY, {
+    expiresIn: expiresIn,
+    algorithm: 'RS256',
+  });
+
+  return {
+    token: 'Bearer ' + signedToken,
+    expires: expiresIn,
+  };
 };
