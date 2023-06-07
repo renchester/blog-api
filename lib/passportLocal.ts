@@ -4,12 +4,12 @@ import { checkPasswordValidity } from '../utils/passwordUtils';
 
 import User from '../models/user';
 
-const verifyCallback: VerifyFunction = async (username, password, cb) => {
+const verifyCallback: VerifyFunction = async (email, password, cb) => {
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email: email });
 
     if (!user) {
-      return cb(null, false, { message: 'Incorrect username' });
+      return cb(null, false, { message: 'Incorrect email' });
     }
 
     const isPasswordValid = checkPasswordValidity(
@@ -24,11 +24,14 @@ const verifyCallback: VerifyFunction = async (username, password, cb) => {
       return cb(null, false, { message: 'Incorrect password' });
     }
   } catch (error) {
-    cb(error);
+    cb(error, false, { message: 'Authentication failed' });
   }
 };
 
-const strategy = new LocalStrategy(verifyCallback);
+const strategy = new LocalStrategy(
+  { usernameField: 'email', passwordField: 'password' },
+  verifyCallback,
+);
 
 passport.use(strategy);
 
