@@ -14,9 +14,13 @@ import {
   invalidPathHandler,
 } from './lib/errorHandlers';
 import apiRouter from './routes/api';
+import authRouter from './routes/auth';
 
-// Import the entire Passport Local Strategy lib module
+// Import the entire Passport Local Strategy module
 import './lib/passportLocal';
+
+// Import Passport JWT Strategy module
+import './lib/passportJWT';
 
 dotenv.config();
 
@@ -31,10 +35,7 @@ const app: Express = express();
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.DB_CONNECTION_URL);
-
-    mongoose.connection.on('connected', () => {
-      console.log('Connected to database');
-    });
+    console.log('Connected to database');
   } catch (error) {
     if (error instanceof Error) {
       console.error(error.message);
@@ -65,6 +66,7 @@ app.get('/', (req, res) => {
   res.redirect('/api');
 });
 
+app.use('/auth', authRouter);
 app.use('/api', apiRouter);
 
 // Catch 404 and forward to error handler
