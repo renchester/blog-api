@@ -1,5 +1,5 @@
 import mongoose, { Model } from 'mongoose';
-import Comment from './comment';
+import { CommentSchema } from './comment';
 
 const Schema = mongoose.Schema;
 
@@ -9,7 +9,7 @@ const BlogPostSchema = new Schema<BlogPost, Model<BlogPost>>({
   slug: { type: String, required: true, unique: true },
   author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   content: { type: String, required: true },
-  comments: { type: [Comment], required: false },
+  comments: { type: [CommentSchema], required: false },
 });
 
 const BlogPostModel = mongoose.model('BlogPost', BlogPostSchema);
