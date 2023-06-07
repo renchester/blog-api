@@ -32,7 +32,8 @@
     "morgan": "^1.10.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "validator": "^13.9.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.3",
@@ -41,9 +42,11 @@
     "@types/express": "^4.17.17",
     "@types/express-session": "^1.17.7",
     "@types/http-errors": "^2.0.1",
+    "@types/jsonwebtoken": "^9.0.2",
     "@types/morgan": "^1.9.4",
     "@types/node": "^20.2.5",
     "@types/passport": "^1.0.12",
+    "@types/passport-jwt": "^3.0.8",
     "@types/passport-local": "^1.0.35",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "concurrently": "^8.1.0",
