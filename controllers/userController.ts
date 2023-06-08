@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import asyncHandler from 'express-async-handler';
+import createError from 'http-errors';
 
 import User from '../models/user';
 import { checkPasswordValidity, genPassword } from '../utils/passwordUtils';
@@ -51,7 +52,10 @@ const validateLastName = () =>
 const userController = (() => {
   // Return list of all existing users in database
   const get_users = asyncHandler(async (req: Request, res: Response) => {
-    const allUsers = await User.find({}).populate('posts').exec();
+    const allUsers = await User.find(
+      {},
+      { username: 1, email: 1, first_name: 1, last_name: 1, _id: 1 },
+    ).exec();
     res.json({ users: allUsers });
   });
 
@@ -77,29 +81,38 @@ const userController = (() => {
         salt: salt,
         first_name: req.body.first_name,
         last_name: req.body.last_name,
-        posts: [],
       });
       if (!errors.isEmpty()) {
         // There are errors. Return error message
-        res.status(400).json({ error: errors.array()[0].msg });
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
       } else {
         const newUser = await user.save();
-        res.status(201).location(`/api/users/${newUser._id}`).json({
-          success: true,
-          message: `Successfully created user`,
-          user,
-        });
+        res
+          .status(201)
+          .location(`/api/users/${newUser._id}`)
+          .json({
+            success: true,
+            message: `Successfully created user`,
+            user,
+            link: `/api/users/${newUser._id}`,
+          });
       }
     }),
   ];
 
   const get_user_by_id = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-      const user = await User.findById(req.params.id);
+      const user = await User.findById(req.params.id, {
+        _id: 1,
+        username: 1,
+        email: 1,
+        first_name: 1,
+        last_name: 1,
+      });
 
       if (user === null) {
-        const err: ResponseError = new Error('User not found');
-        err.status = 404;
+        const err = createError(400, 'User not found');
         return next(err);
       }
 
@@ -108,6 +121,27 @@ const userController = (() => {
   );
 
   const update_details = [
+    // Check if current user has authorization to edit user details
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+      // Find user to be updated
+      const targetUser = await User.findById(req.params.id);
+
+      if (!targetUser) {
+        const err = createError(404, 'Unable to find user');
+        return next(err);
+      }
+
+      // Check if target user is also the current user
+      const isUser = targetUser._id === req.user?._id;
+
+      if (isUser) {
+        const err = createError(401, 'Unauthorized to edit user details');
+        return next(err);
+      } else {
+        next();
+      }
+    }),
+
     // Validate and sanitize fields
     validateUsername(),
     validateEmail(),
@@ -123,8 +157,7 @@ const userController = (() => {
       const user = await User.findById(req.params.id);
 
       if (user === null) {
-        const err: ResponseError = new Error('User not found');
-        err.status = 404;
+        const err = createError(400, 'User not found');
         return next(err);
       }
 
@@ -136,33 +169,59 @@ const userController = (() => {
         last_name: req.body.last_name,
         salt: user.salt,
         hash: user.hash,
-        posts: user.posts,
       });
 
       if (!errors.isEmpty()) {
         // There are errors. Return error message
-        res.status(400).json({ error: errors.array()[0].msg });
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
       } else {
         // Data is valid. Update the record.
-        await User.findByIdAndUpdate(req.params.id, updatedUser, {});
+        const user = await User.findByIdAndUpdate(req.params.id, updatedUser, {
+          runValidators: true,
+        });
 
-        res.json({
+        res.location(`/api/users/${user?._id}`).json({
           success: true,
           message: `Successfully updated user details`,
-          updatedUser,
+          user: user,
+          link: `/api/users/${req.params.id}`,
         });
       }
     }),
   ];
 
   const update_password = [
+    // Check if current user has authorization to edit user password
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+      // Find user to be updated
+      const targetUser = await User.findById(req.params.id);
+
+      if (!targetUser) {
+        const err = createError(404, 'Unable to find user');
+        return next(err);
+      }
+
+      // Check if target user is also the current user
+      const isUser = targetUser._id === req.user?._id;
+
+      if (isUser) {
+        const err = createError(
+          401,
+          "Unauthorized to edit this user's password",
+        );
+        return next(err);
+      } else {
+        next();
+      }
+    }),
+
     // Check if old password matches
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const user = await User.findById(req.params.id);
 
       if (user === null) {
-        const err: ResponseError = new Error('User not found');
-        err.status = 404;
+        const err = createError(400, 'User not found');
         return next(err);
       }
 
@@ -173,9 +232,8 @@ const userController = (() => {
       );
 
       if (!oldPasswordMatch) {
-        res.status(400).json({
-          error: 'Password does not match',
-        });
+        const err = createError(400, 'Password does not match');
+        return next(err);
       } else {
         next();
       }
@@ -194,19 +252,21 @@ const userController = (() => {
 
       if (!errors.isEmpty()) {
         // There are errors. Return error message
-        res.status(400).json({ error: errors.array()[0].msg });
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
       } else {
         // No errors. Update record and return new user.
         const user = await User.findByIdAndUpdate(
           req.params.id,
           { hash, salt },
-          { returnDocument: 'after' },
+          { runValidators: true },
         );
 
-        res.json({
+        res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated password`,
           user,
+          link: `/api/users/${req.params.id}`,
         });
       }
     }),
@@ -217,9 +277,10 @@ const userController = (() => {
       const result = await User.findByIdAndDelete(req.params.id);
 
       if (result) {
-        res.status(204);
+        res.status(204).end();
       } else {
-        res.status(500).json({ error: 'Failed to delete user' });
+        const err = createError(500, 'Failed to delete user');
+        return next(err);
       }
     },
   );
