@@ -10,7 +10,6 @@ const UserSchema = new Schema<User, Model<User>>({
   hash: { type: String, required: true },
   first_name: { type: String, required: true },
   last_name: { type: String, required: true },
-  posts: { type: [Schema.Types.ObjectId], ref: 'BlogPost', required: false },
 });
 
 const UserModel = mongoose.model('User', UserSchema);
