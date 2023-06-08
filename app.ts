@@ -17,10 +17,10 @@ import apiRouter from './routes/api';
 import authRouter from './routes/auth';
 
 // Import the entire Passport Local Strategy module
-import './lib/passportLocal';
+import './config/passportLocal';
 
 // Import Passport JWT Strategy module
-import './lib/passportJWT';
+import './config/passportJWT';
 
 dotenv.config();
 
