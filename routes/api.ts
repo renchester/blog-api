@@ -37,6 +37,38 @@ router.put(
   userController.update_details,
 );
 
+// PATCH request for updating user first name
+router.patch(
+  '/users/:id/first_name',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  userController.update_first_name,
+);
+
+// PATCH request for updating user last name
+router.patch(
+  '/users/:id/last_name',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  userController.update_last_name,
+);
+
+// PATCH request for updating username
+router.patch(
+  '/users/:id/username',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  userController.update_username,
+);
+
+// PATCH request for updating user email
+router.patch(
+  '/users/:id/email',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  userController.update_email,
+);
+
 // PATCH request for updating user password
 router.patch(
   '/users/:id/password',
@@ -52,6 +84,9 @@ router.delete(
   retrieveUserFromJWT,
   userController.delete_user,
 );
+
+// GET request to retrieve posts by user
+router.get('/users/:id/posts', userController.get_user_posts);
 
 /**
  * ------------- POST ROUTES -------------
@@ -87,6 +122,9 @@ router.delete(
   postController.delete_post,
 );
 
+// GET request to retrieve posts by tagname
+router.get('/posts/tags/:tagname', postController.get_posts_by_tagname);
+
 /**
  * ------------- COMMENT ROUTES -------------
  */
@@ -104,13 +142,13 @@ router.post(
 
 // GET request to retrieve a specific comment
 router.get(
-  '/posts/:postid/commens/:commentid',
+  '/posts/:postid/comments/:commentid',
   commentController.get_comment_by_id,
 );
 
 // PATCH request to update comment body
 router.patch(
-  '/posts/:postid/comments',
+  '/posts/:postid/comments/:commentid',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.edit_comment,
@@ -118,7 +156,7 @@ router.patch(
 
 // DELETE request to delete comment
 router.delete(
-  '/posts/:postid/commens/:commentid',
+  '/posts/:postid/comments/:commentid',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.delete_comment,
@@ -133,5 +171,19 @@ router.get('/tags', tagController.get_tags);
 router.post('/tags', tagController.create_tag);
 
 router.get('/tags/:id', tagController.get_tag_by_id);
+
+router.delete(
+  '/tags/:id',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  tagController.delete_tag,
+);
+
+router.patch(
+  '/tags/:id',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  tagController.edit_tag,
+);
 
 export default router;
