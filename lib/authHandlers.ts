@@ -52,11 +52,11 @@ export const retrieveUserFromJWT = asyncHandler(
     // Find user in database
     const user = await User.findById(decodedToken.sub, {
       _id: 1,
+      admin: 1,
       username: 1,
       email: 1,
       first_name: 1,
       last_name: 1,
-      isAdmin: 1,
     });
 
     if (user !== null) {
