@@ -11,6 +11,7 @@ const UserSchema = new Schema<User, Model<User>>({
     maxLength: 30,
     unique: true,
   },
+  admin: { type: Boolean, required: false },
   email: { type: String, required: true, maxlength: 1024, unique: true },
   salt: { type: String, required: true },
   hash: { type: String, required: true },
