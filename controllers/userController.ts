@@ -7,20 +7,40 @@ import User from '../models/user';
 import BlogPost from '../models/blogPost';
 import { checkPasswordValidity, genPassword } from '../utils/passwordUtils';
 
+const checkAuthorization = () =>
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    // Find user to be updated
+    const targetUser = await User.findById(req.params.id);
+
+    if (!targetUser) {
+      const err = createError(404, 'Unable to find user');
+      return next(err);
+    }
+
+    // Check if target user is also the current user
+    const isUser = req.user?._id.equals(targetUser._id);
+
+    console.log({
+      isUser,
+      currentUser: req.user?.username,
+      targetUser: targetUser.username,
+    });
+
+    if (!isUser) {
+      const err = createError(401, 'Unauthorized to edit this field');
+      return next(err);
+    } else {
+      next();
+    }
+  });
+
 const validateUsername = () =>
   body('username', 'Username must be between 6 and 30 characters')
     .trim()
     .notEmpty()
     .withMessage('Username cannot be empty')
     .isLength({ min: 6, max: 30 })
-    .escape()
-    .bail()
-    .custom(async (username) => {
-      const isUsernameTaken = await User.findOne({ username });
-      if (isUsernameTaken) {
-        throw new Error('Username is already in use');
-      }
-    });
+    .escape();
 
 const validateEmail = () =>
   body('email', 'Invalid email format')
@@ -30,14 +50,7 @@ const validateEmail = () =>
     .escape()
     .bail()
     .isEmail()
-    .isLength({ max: 1024 })
-    .bail()
-    .custom(async (email) => {
-      const isEmailTaken = await User.findOne({ email });
-      if (isEmailTaken) {
-        throw new Error('Email is already in use');
-      }
-    });
+    .isLength({ max: 1024 });
 
 const validatePassword = () =>
   body('password', 'Password must have a minimum of 6 characters')
@@ -69,8 +82,22 @@ const userController = (() => {
   // Create a new user and save to database
   const create_user = [
     // Validate and sanitize fields
-    validateUsername(),
-    validateEmail(),
+    validateUsername()
+      .bail()
+      .custom(async (username) => {
+        const isUsernameTaken = await User.findOne({ username });
+        if (isUsernameTaken) {
+          throw new Error('Username is already in use');
+        }
+      }),
+    validateEmail()
+      .bail()
+      .custom(async (email) => {
+        const isEmailTaken = await User.findOne({ email });
+        if (isEmailTaken) {
+          throw new Error('Email is already in use');
+        }
+      }),
     validatePassword(),
     validateFirstName(),
     validateLastName(),
@@ -123,25 +150,7 @@ const userController = (() => {
 
   const update_details = [
     // Check if current user has authorization to edit user details
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-      // Find user to be updated
-      const targetUser = await User.findById(req.params.id);
-
-      if (!targetUser) {
-        const err = createError(404, 'Unable to find user');
-        return next(err);
-      }
-
-      // Check if target user is also the current user
-      const isUser = targetUser._id === req.user?._id;
-
-      if (isUser) {
-        const err = createError(401, 'Unauthorized to edit user details');
-        return next(err);
-      } else {
-        next();
-      }
-    }),
+    checkAuthorization(),
 
     // Validate and sanitize fields
     validateUsername(),
@@ -192,30 +201,145 @@ const userController = (() => {
     }),
   ];
 
-  const update_password = [
-    // Check if current user has authorization to edit user password
+  const update_first_name = [
+    // Check if current user has authorization to edit user first name
+    checkAuthorization(),
+
+    // Validate first name
+    validateFirstName(),
+
+    // Process request after validation
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-      // Find user to be updated
-      const targetUser = await User.findById(req.params.id);
+      // Extract the validation errors from a request
+      const errors = validationResult(req);
 
-      if (!targetUser) {
-        const err = createError(404, 'Unable to find user');
-        return next(err);
-      }
-
-      // Check if target user is also the current user
-      const isUser = targetUser._id === req.user?._id;
-
-      if (isUser) {
-        const err = createError(
-          401,
-          "Unauthorized to edit this user's password",
-        );
+      if (!errors.isEmpty()) {
+        // There are errors. Return error message
+        const err = createError(400, errors.array()[0].msg);
         return next(err);
       } else {
-        next();
+        // No errors. Update record and return new user.
+        const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { first_name: req.body.first_name },
+          { runValidators: true, returnDocument: 'after' },
+        );
+
+        res.location(`/api/users/${req.params.id}`).json({
+          success: true,
+          message: `Successfully updated first name`,
+          user,
+          link: `/api/users/${req.params.id}`,
+        });
       }
     }),
+  ];
+
+  const update_last_name = [
+    // Check if current user has authorization to edit user last name
+    checkAuthorization(),
+
+    // Validate last name
+    validateLastName(),
+
+    // Process request after validation
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+      // Extract the validation errors from a request
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        // There are errors. Return error message
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
+      } else {
+        // No errors. Update record and return new user.
+        const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { last_name: req.body.last_name },
+          { runValidators: true, returnDocument: 'after' },
+        );
+
+        res.location(`/api/users/${req.params.id}`).json({
+          success: true,
+          message: `Successfully updated last name`,
+          user,
+          link: `/api/users/${req.params.id}`,
+        });
+      }
+    }),
+  ];
+
+  const update_username = [
+    // Check if current user has authorization to edit username
+    checkAuthorization(),
+
+    // Validate username
+    validateUsername(),
+
+    // Process request after validation
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+      // Extract the validation errors from a request
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        // There are errors. Return error message
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
+      } else {
+        // No errors. Update record and return new user.
+        const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { username: req.body.username },
+          { runValidators: true, returnDocument: 'after' },
+        );
+
+        res.location(`/api/users/${req.params.id}`).json({
+          success: true,
+          message: `Successfully updated username`,
+          user,
+          link: `/api/users/${req.params.id}`,
+        });
+      }
+    }),
+  ];
+
+  const update_email = [
+    // Check if current user has authorization to edit user email
+    checkAuthorization(),
+
+    // Validate last name
+    validateEmail(),
+
+    // Process request after validation
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+      // Extract the validation errors from a request
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        // There are errors. Return error message
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
+      } else {
+        // No errors. Update record and return new user.
+        const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { email: req.body.email },
+          { runValidators: true, returnDocument: 'after' },
+        );
+
+        res.location(`/api/users/${req.params.id}`).json({
+          success: true,
+          message: `Successfully updated email`,
+          user,
+          link: `/api/users/${req.params.id}`,
+        });
+      }
+    }),
+  ];
+
+  const update_password = [
+    // Check if current user has authorization to edit user password
+    checkAuthorization(),
 
     // Check if old password matches
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -260,7 +384,7 @@ const userController = (() => {
         const user = await User.findByIdAndUpdate(
           req.params.id,
           { hash, salt },
-          { runValidators: true },
+          { runValidators: true, returnDocument: 'after' },
         );
 
         res.location(`/api/users/${req.params.id}`).json({
@@ -322,6 +446,10 @@ const userController = (() => {
     create_user,
     get_user_by_id,
     update_details,
+    update_first_name,
+    update_last_name,
+    update_username,
+    update_email,
     update_password,
     delete_user,
     get_user_posts,
