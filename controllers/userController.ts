@@ -341,6 +341,14 @@ const userController = (() => {
     // Check if current user has authorization to edit user password
     checkAuthorization(),
 
+    // Validate old password
+    body('old_password', 'Password must have a minimum of 6 characters')
+      .notEmpty()
+      .isLength({ min: 6, max: 1024 }),
+
+    // Validate new password
+    validatePassword(),
+
     // Check if old password matches
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const user = await User.findById(req.params.id);
@@ -363,9 +371,6 @@ const userController = (() => {
         next();
       }
     }),
-
-    // Validate new password
-    validatePassword(),
 
     // Process request after password validation
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -400,7 +405,7 @@ const userController = (() => {
   const delete_user = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
       // Check if user is admin (has authorization to delete users)
-      const isAdmin = req.user?.isAdmin;
+      const isAdmin = req.user?.admin;
 
       if (!isAdmin) {
         const err = createError(401, 'Unauthorized to delete user');
@@ -429,13 +434,16 @@ const userController = (() => {
   );
 
   const get_user_posts = asyncHandler(async (req, res, next) => {
-    const posts = await BlogPost.find({
-      author: { _id: req.params.id },
-    })
+    const posts = await BlogPost.find(
+      {
+        author: { _id: req.params.id },
+      },
+      { __v: 0 },
+    )
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
-      .populate('tags')
+      .populate('tags', { __v: 0 })
       .exec();
 
     res.json({ posts });
