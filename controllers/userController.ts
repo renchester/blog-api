@@ -57,6 +57,7 @@ const userController = (() => {
     first_name: 1,
     last_name: 1,
     _id: 1,
+    isAdmin: 1,
   };
 
   // Return list of all existing users in database
@@ -303,6 +304,19 @@ const userController = (() => {
     },
   );
 
+  const get_user_posts = asyncHandler(async (req, res, next) => {
+    const posts = await BlogPost.find({
+      author: { _id: req.params.id },
+    })
+      .populate('author', userProjection)
+      .populate('editors', userProjection)
+      .populate('liked_by', userProjection)
+      .populate('tags')
+      .exec();
+
+    res.json({ posts });
+  });
+
   return {
     get_users,
     create_user,
@@ -310,6 +324,7 @@ const userController = (() => {
     update_details,
     update_password,
     delete_user,
+    get_user_posts,
   };
 })();
 
