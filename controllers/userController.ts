@@ -4,6 +4,7 @@ import asyncHandler from 'express-async-handler';
 import createError from 'http-errors';
 
 import User from '../models/user';
+import BlogPost from '../models/blogPost';
 import { checkPasswordValidity, genPassword } from '../utils/passwordUtils';
 
 const validateUsername = () =>
@@ -50,12 +51,17 @@ const validateLastName = () =>
   body('last_name', 'Last name must not be empty').trim().notEmpty().escape();
 
 const userController = (() => {
+  const userProjection = {
+    username: 1,
+    email: 1,
+    first_name: 1,
+    last_name: 1,
+    _id: 1,
+  };
+
   // Return list of all existing users in database
   const get_users = asyncHandler(async (req: Request, res: Response) => {
-    const allUsers = await User.find(
-      {},
-      { username: 1, email: 1, first_name: 1, last_name: 1, _id: 1 },
-    ).exec();
+    const allUsers = await User.find({}, userProjection).exec();
     res.json({ users: allUsers });
   });
 
@@ -103,13 +109,7 @@ const userController = (() => {
 
   const get_user_by_id = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-      const user = await User.findById(req.params.id, {
-        _id: 1,
-        username: 1,
-        email: 1,
-        first_name: 1,
-        last_name: 1,
-      });
+      const user = await User.findById(req.params.id, userProjection);
 
       if (user === null) {
         const err = createError(400, 'User not found');
@@ -274,7 +274,25 @@ const userController = (() => {
 
   const delete_user = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
+      // Check if user is admin (has authorization to delete users)
+      const isAdmin = req.user?.isAdmin;
+
+      if (!isAdmin) {
+        const err = createError(401, 'Unauthorized to delete user');
+        return next(err);
+      }
+
+      // User is admin. Delete record
       const result = await User.findByIdAndDelete(req.params.id);
+
+      // Delete all posts from user
+      await BlogPost.deleteMany({ author: { _id: result?._id } });
+
+      // Delete all comments from user
+      await BlogPost.updateMany(
+        {},
+        { comments: { $pull: { author: { _id: result?._id } } } },
+      );
 
       if (result) {
         res.status(204).end();
