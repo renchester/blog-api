@@ -14,7 +14,7 @@ const commentController = (() => {
   };
 
   const get_post_comments = asyncHandler(async (req, res, next) => {
-    const targetPost = await BlogPost.findById(req.params.postid)
+    const targetPost = await BlogPost.findById(req.params.postid, { __v: 0 })
       .populate('comments')
       .populate('comments.author', userProjection)
       .exec();
@@ -81,7 +81,7 @@ const commentController = (() => {
       const updatedPost = await targetPost.save();
       const newComment = updatedPost.comments.find(
         (comment) =>
-          comment.author === req.user?._id &&
+          req.user?._id.equals(comment.author) &&
           comment.content === req.body.content,
       );
 
@@ -100,7 +100,7 @@ const commentController = (() => {
   ];
 
   const get_comment_by_id = asyncHandler(async (req, res, next) => {
-    const parentPost = await BlogPost.findById(req.params.postid)
+    const parentPost = await BlogPost.findById(req.params.postid, { __v: 0 })
       .populate('comments')
       .populate('comments.author', userProjection)
       .populate('comments.liked_by', userProjection)
@@ -149,7 +149,7 @@ const commentController = (() => {
         return next(err);
       }
 
-      const isAuthor = comment.author._id === req.user?._id;
+      const isAuthor = req.user?._id.equals(comment.author._id);
 
       if (!isAuthor) {
         const err = createError(401, 'Unauthorized to edit comment');
@@ -199,6 +199,10 @@ const commentController = (() => {
       targetComment.edits.push({ timestamp: Date.now() });
       await parentPost.save();
 
+      const updatedComment = parentPost.comments.find((comment) =>
+        comment._id.equals(req.params.commentid),
+      );
+
       // Send location and success result
       res
         .location(`/api/posts/${parentPost._id}/comments/${targetComment._id}`)
@@ -206,6 +210,7 @@ const commentController = (() => {
           success: true,
           message: 'Successfully updated comment',
           post: parentPost,
+          comment: updatedComment,
           link: `/api/posts/${req.params.id}`,
         });
     }),
@@ -237,7 +242,7 @@ const commentController = (() => {
         return next(err);
       }
 
-      const isAuthor = targetComment.author._id === req.user?._id;
+      const isAuthor = req.user?._id.equals(targetComment.author._id);
 
       if (!isAuthor) {
         const err = createError(401, 'Unauthorized to delete comment');
