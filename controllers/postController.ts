@@ -1,6 +1,6 @@
+import { NextFunction, Response, Request } from 'express';
 import { body, validationResult } from 'express-validator';
 import asyncHandler from 'express-async-handler';
-import { unescape } from 'querystring';
 import slugify from 'slugify';
 import createError from 'http-errors';
 
@@ -20,16 +20,30 @@ const postController = (() => {
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
-      .populate('tags')
+      .populate('tags', { __v: 0 })
       .exec();
 
     res.json({ posts: allPosts });
   });
 
   const create_post = [
+    // Handle type of req.body.tag
+    function (req: Request, res: Response, next: NextFunction) {
+      if (!(req.body.tag instanceof Array)) {
+        if (typeof req.body.tag === 'undefined') {
+          req.body.tag = [];
+        } else {
+          req.body.tag = new Array(req.body.tag);
+        }
+      }
+
+      next();
+    },
+
     // Validate and sanitize fields
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
     body('content', 'Content must not be empty').trim().notEmpty().escape(),
+    body('tag.*').escape(),
 
     // Process request after validation and sanitization
     asyncHandler(async (req, res, next) => {
@@ -67,7 +81,7 @@ const postController = (() => {
           content: req.body.content,
           comments: [],
           liked_by: [],
-          tags: [],
+          tags: req.body.tag,
           edits: [],
         });
 
@@ -92,6 +106,7 @@ const postController = (() => {
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
+      .populate('tags', { __v: 0 })
       .exec();
 
     if (post === null) {
@@ -114,14 +129,14 @@ const postController = (() => {
       }
 
       // Check if user is an authorized editor
-      const isEditor = targetPost.editors?.find(
-        (editor) => editor._id === req.user?._id,
+      const isEditor = targetPost.editors?.find((editor) =>
+        req.user?._id.equals(editor._id),
       );
 
       // Check if user is the author
-      const isAuthor = targetPost.author._id === req.user?._id;
+      const isAuthor = req.user?._id.equals(targetPost.author._id);
 
-      if (!isEditor || !isAuthor) {
+      if (!(isEditor || isAuthor)) {
         const err = createError(401, 'Unauthorized to edit post');
         return next(err);
       } else {
@@ -179,7 +194,7 @@ const postController = (() => {
       }
 
       // Check if user is the author
-      const isAuthor = targetPost.author._id === req.user?._id;
+      const isAuthor = req.user?._id.equals(targetPost.author._id);
 
       if (!isAuthor) {
         const err = createError(401, 'Unauthorized to delete post');
@@ -202,12 +217,31 @@ const postController = (() => {
     }),
   ];
 
+  const get_posts_by_tagname = asyncHandler(async (req, res, next) => {
+    const posts = await BlogPost.find({}, { __v: 0 })
+      .populate('author', userProjection)
+      .populate('editors', userProjection)
+      .populate('liked_by', userProjection)
+      .populate('tags', { __v: 0 })
+      .exec();
+
+    const filteredPosts = posts.filter((post) =>
+      post.tags.find((tag: any) => tag.name === req.params.tagname),
+    );
+
+    res.json({
+      tag: req.params.tagname,
+      posts: filteredPosts,
+    });
+  });
+
   return {
     get_posts,
     create_post,
     get_post_by_id,
     edit_post,
     delete_post,
+    get_posts_by_tagname,
   };
 })();
 
