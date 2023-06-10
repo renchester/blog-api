@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.ts",
   "scripts": {
-    "build": "npm instal && npx tsc",
+    "build": "npm install && npx tsc",
     "start": "node dist/bin/www.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/bin/www.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
