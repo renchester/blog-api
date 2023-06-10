@@ -140,7 +140,7 @@ const userController = (() => {
       const user = await User.findById(req.params.id, userProjection);
 
       if (user === null) {
-        const err = createError(400, 'User not found');
+        const err = createError(404, 'User not found');
         return next(err);
       }
 
@@ -167,7 +167,7 @@ const userController = (() => {
       const user = await User.findById(req.params.id);
 
       if (user === null) {
-        const err = createError(400, 'User not found');
+        const err = createError(404, 'User not found');
         return next(err);
       }
 
@@ -354,7 +354,7 @@ const userController = (() => {
       const user = await User.findById(req.params.id);
 
       if (user === null) {
-        const err = createError(400, 'User not found');
+        const err = createError(404, 'User not found');
         return next(err);
       }
 

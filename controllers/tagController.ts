@@ -68,7 +68,7 @@ const tagController = (() => {
     const tag = await Tag.findById(req.params.id, { __v: 0 });
 
     if (tag === null) {
-      const err = createError(400, 'Tag not found');
+      const err = createError(404, 'Tag not found');
       return next(err);
     }
 

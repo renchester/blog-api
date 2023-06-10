@@ -20,8 +20,7 @@ const commentController = (() => {
       .exec();
 
     if (!targetPost) {
-      const err: ResponseError = new Error('Unable to find post');
-      err.status = 404;
+      const err = createError(404, 'Unable to find post');
       return next(err);
     }
 
@@ -155,7 +154,7 @@ const commentController = (() => {
         const err = createError(401, 'Unauthorized to edit comment');
         return next(err);
       } else {
-        next();
+        return next();
       }
     }),
 
