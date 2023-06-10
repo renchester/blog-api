@@ -31,7 +31,7 @@ export const authenticateJWT = (
       if (!user) {
         res.status(404).json({ error: 'Unable to find user', success: false });
       } else {
-        next();
+        return next();
       }
     },
   )(req, res, next);
@@ -39,7 +39,7 @@ export const authenticateJWT = (
 export const retrieveUserFromJWT = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     if (!(req.headers && req.headers.authorization)) {
-      const err = new Error('Unauthorized');
+      const err = createError(401, 'Unauthorized');
       return next(err);
     }
 
@@ -62,9 +62,10 @@ export const retrieveUserFromJWT = asyncHandler(
     if (user !== null) {
       // Pass the user to the endpoints
       req.user = user;
-      next();
+      return next();
     } else {
-      createError(404, 'Unable to find user');
+      const err = createError(404, 'Unable to find user');
+      return next(err);
     }
   },
 );
