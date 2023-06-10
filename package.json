@@ -33,7 +33,7 @@
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
-    "validator": "^13.9.0"
+    "slugify": "^1.6.6"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.3",
@@ -48,6 +48,7 @@
     "@types/passport": "^1.0.12",
     "@types/passport-jwt": "^3.0.8",
     "@types/passport-local": "^1.0.35",
+    "@types/validator": "^13.7.17",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "concurrently": "^8.1.0",
     "eslint": "^8.42.0",
