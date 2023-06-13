@@ -32,6 +32,15 @@ declare global {
     status?: number;
   }
 
+  type BlogCategory =
+    | 'architecture'
+    | 'art'
+    | 'interior design'
+    | 'lifestyle'
+    | 'style + fashion'
+    | 'tech'
+    | 'travel';
+
   interface BlogPost {
     _id: Types.ObjectId;
     date_created: Date | string | number;
@@ -46,6 +55,8 @@ declare global {
     edits: {
       timestamp: Date | string | number;
     }[];
+    is_private: boolean;
+    category: BlogCategory;
   }
 
   interface Comment {

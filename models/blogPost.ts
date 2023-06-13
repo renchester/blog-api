@@ -19,6 +19,8 @@ const BlogPostSchema = new Schema<
   },
   content: { type: String, required: true },
   comments: { type: [CommentSchema], required: false },
+  is_private: { type: Boolean, default: false },
+  category: { type: String, required: true },
 });
 
 const BlogPostModel = mongoose.model('BlogPost', BlogPostSchema);
