@@ -14,6 +14,32 @@ const postController = (() => {
     email: 1,
   };
 
+  const checkAuthorization = () =>
+    asyncHandler(async (req, res, next) => {
+      // Find post to be updated
+      const targetPost = await BlogPost.findById(req.params.id);
+
+      if (!targetPost) {
+        const err = createError(404, 'Unable to find post');
+        return next(err);
+      }
+
+      // Check if user is an authorized editor
+      const isEditor = targetPost.editors?.find((editor) =>
+        req.user?._id.equals(editor._id),
+      );
+
+      // Check if user is the author
+      const isAuthor = req.user?._id.equals(targetPost.author._id);
+
+      if (!(isEditor || isAuthor)) {
+        const err = createError(401, 'Unauthorized to edit post');
+        return next(err);
+      } else {
+        next();
+      }
+    });
+
   // Return list of all posts in database
   const get_posts = asyncHandler(async (req, res, next) => {
     const allPosts = await BlogPost.find({}, { __v: 0 })
@@ -44,6 +70,8 @@ const postController = (() => {
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
     body('content', 'Content must not be empty').trim().notEmpty().escape(),
     body('tag.*').escape(),
+    body('category', 'Category must not be empty').trim().notEmpty().escape(),
+    body('is_private').escape(),
 
     // Process request after validation and sanitization
     asyncHandler(async (req, res, next) => {
@@ -83,6 +111,8 @@ const postController = (() => {
           liked_by: [],
           tags: req.body.tag,
           edits: [],
+          category: req.body.category,
+          is_private: req.body.is_private || false,
         });
 
         const newPost = await blogPost.save();
@@ -119,30 +149,7 @@ const postController = (() => {
 
   const edit_post = [
     // Check if current user has authorization to edit the post
-    asyncHandler(async (req, res, next) => {
-      // Find post to be updated
-      const targetPost = await BlogPost.findById(req.params.id);
-
-      if (!targetPost) {
-        const err = createError(404, 'Unable to find post');
-        return next(err);
-      }
-
-      // Check if user is an authorized editor
-      const isEditor = targetPost.editors?.find((editor) =>
-        req.user?._id.equals(editor._id),
-      );
-
-      // Check if user is the author
-      const isAuthor = req.user?._id.equals(targetPost.author._id);
-
-      if (!(isEditor || isAuthor)) {
-        const err = createError(401, 'Unauthorized to edit post');
-        return next(err);
-      } else {
-        next();
-      }
-    }),
+    checkAuthorization(),
 
     // Validate and sanitize fields
     body('content', 'Content must not be empty').trim().notEmpty().escape(),
@@ -179,6 +186,42 @@ const postController = (() => {
         post: targetPost,
         link: `/api/posts/${req.params.id}`,
       });
+    }),
+  ];
+
+  const edit_privacy = [
+    // Check is user has authorization to edit post privacy
+    checkAuthorization(),
+
+    // Sanitize input
+    body('is_private').trim().isBoolean(),
+
+    // Process request
+    asyncHandler(async (req, res, next) => {
+      // Extract the validation errors from a request
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        // There are errors. Return error message
+        const err = createError(400, errors.array()[0].msg);
+        return next(err);
+      } else {
+        // No errors. Update record and return new user.
+        const post = await BlogPost.findByIdAndUpdate(
+          req.params.id,
+          {
+            is_private: req.body.is_private,
+          },
+          { runValidators: true, returnDocument: 'after' },
+        );
+
+        res.location(`/api/posts/${req.params.id}`).json({
+          success: true,
+          message: `Successfully updated post privacy`,
+          post,
+          link: `/api/posts/${req.params.id}`,
+        });
+      }
     }),
   ];
 
@@ -242,6 +285,7 @@ const postController = (() => {
     edit_post,
     delete_post,
     get_posts_by_tagname,
+    edit_privacy,
   };
 })();
 

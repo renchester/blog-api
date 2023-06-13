@@ -114,6 +114,14 @@ router.patch(
   postController.edit_post,
 );
 
+// PATCH request to update post privacy
+router.patch(
+  '/posts/:id/content',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  postController.edit_privacy,
+);
+
 // DELETE request for deleting post
 router.delete(
   '/posts/:id',
