@@ -20,12 +20,6 @@ const checkAuthorization = () =>
     // Check if target user is also the current user
     const isUser = req.user?._id.equals(targetUser._id);
 
-    console.log({
-      isUser,
-      currentUser: req.user?.username,
-      targetUser: targetUser.username,
-    });
-
     if (!isUser) {
       const err = createError(401, 'Unauthorized to edit this field');
       return next(err);
