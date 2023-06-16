@@ -443,6 +443,35 @@ const userController = (() => {
     res.json({ posts });
   });
 
+  const get_user_by_username = asyncHandler(async (req, res, next) => {
+    const user = await User.findOne(
+      { username: req.params.username },
+      userProjection,
+    );
+
+    if (!user) {
+      const err = createError(404, 'User not found');
+      return next(err);
+    }
+
+    res.json({ user });
+  });
+
+  const get_user_by_email = asyncHandler(async (req, res, next) => {
+    const user = await User.findOne(
+      { email: req.params.email },
+      userProjection,
+    );
+    console.log(user);
+
+    if (!user) {
+      const err = createError(404, 'User not found');
+      return next(err);
+    }
+
+    res.json({ user });
+  });
+
   return {
     get_users,
     create_user,
@@ -455,6 +484,8 @@ const userController = (() => {
     update_password,
     delete_user,
     get_user_posts,
+    get_user_by_username,
+    get_user_by_email,
   };
 })();
 

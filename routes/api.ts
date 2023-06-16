@@ -88,6 +88,11 @@ router.delete(
 // GET request to retrieve posts by user
 router.get('/users/:id/posts', userController.get_user_posts);
 
+// GET request to retrieve specific user by email
+router.get('/users/email/:email', userController.get_user_by_email);
+
+// GET request to retrieve specific user by username
+router.get('/users/username/:username', userController.get_user_by_username);
 /**
  * ------------- POST ROUTES -------------
  */
