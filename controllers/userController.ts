@@ -122,7 +122,6 @@ const userController = (() => {
           .json({
             success: true,
             message: `Successfully created user`,
-            user,
             link: `/api/users/${newUser._id}`,
           });
       }
@@ -188,7 +187,6 @@ const userController = (() => {
         res.location(`/api/users/${user?._id}`).json({
           success: true,
           message: `Successfully updated user details`,
-          user: user,
           link: `/api/users/${req.params.id}`,
         });
       }
@@ -222,7 +220,6 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated first name`,
-          user,
           link: `/api/users/${req.params.id}`,
         });
       }
@@ -256,7 +253,6 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated last name`,
-          user,
           link: `/api/users/${req.params.id}`,
         });
       }
@@ -290,7 +286,6 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated username`,
-          user,
           link: `/api/users/${req.params.id}`,
         });
       }
@@ -324,7 +319,6 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated email`,
-          user,
           link: `/api/users/${req.params.id}`,
         });
       }
@@ -389,7 +383,6 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated password`,
-          user,
           link: `/api/users/${req.params.id}`,
         });
       }
@@ -462,7 +455,7 @@ const userController = (() => {
       { email: req.params.email },
       userProjection,
     );
-    console.log(user);
+    // console.log(user);
 
     if (!user) {
       const err = createError(404, 'User not found');
