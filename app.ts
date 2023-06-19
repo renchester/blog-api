@@ -15,6 +15,8 @@ import {
 } from './lib/errorHandlers';
 import apiRouter from './routes/api';
 import authRouter from './routes/auth';
+import corsOptions from './config/corsOptions';
+import credentials from './lib/credentials';
 
 // Import the entire Passport Local Strategy module
 import './config/passportLocal';
@@ -51,8 +53,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Handle checking of credentials before CORS requests
+// Also handle credentials requirement for cookies
+app.use(credentials);
+
 // Set up cors requests
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Initialize passport instance
 app.use(passport.initialize());
