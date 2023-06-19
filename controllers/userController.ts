@@ -81,7 +81,7 @@ const userController = (() => {
       .custom(async (username) => {
         const isUsernameTaken = await User.findOne({ username });
         if (isUsernameTaken) {
-          throw new Error('Username is already in use');
+          createError(409, 'Username is already in use');
         }
       }),
     validateEmail()
@@ -89,7 +89,7 @@ const userController = (() => {
       .custom(async (email) => {
         const isEmailTaken = await User.findOne({ email });
         if (isEmailTaken) {
-          throw new Error('Email is already in use');
+          createError(409, 'Email is already in use');
         }
       }),
     validatePassword(),
