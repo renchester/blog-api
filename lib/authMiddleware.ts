@@ -1,17 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import passport from 'passport';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 import User from '../models/user';
 import createError from 'http-errors';
-import issueAccessToken from '../utils/issueAccessToken';
 
 dotenv.config();
 
 const PUB_ACCESS_KEY = process.env.PUB_ACCESS_KEY;
-const PUB_REFRESH_KEY = process.env.PUB_REFRESH_KEY;
 
 export const authenticateJWT = (
   req: Request,
@@ -77,31 +75,3 @@ export const retrieveUserFromJWT = asyncHandler(
     }
   },
 );
-
-export const issueNewToken = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const refreshToken = req.cookies.jwt;
-
-  try {
-    // Verify the refresh token, throws error is invalid
-    const decodedToken = jwt.verify(
-      refreshToken,
-      PUB_REFRESH_KEY,
-    ) as JwtPayload;
-
-    // Get new token if refreshToken is verified
-    const accessToken = issueAccessToken(decodedToken.user, false);
-
-    res.json({
-      success: true,
-      accessToken,
-    });
-  } catch (error) {
-    res
-      .status(403)
-      .json({ error: 'Refresh token is expired or has been revoked' });
-  }
-};

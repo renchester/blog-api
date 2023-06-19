@@ -4,7 +4,7 @@ import userController from '../controllers/userController';
 import postController from '../controllers/postController';
 import tagController from '../controllers/tagController';
 import commentController from '../controllers/commentController';
-import { authenticateJWT, retrieveUserFromJWT } from '../lib/authHandlers';
+import { authenticateJWT, retrieveUserFromJWT } from '../lib/authMiddleware';
 
 const router = express.Router();
 
