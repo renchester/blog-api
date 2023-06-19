@@ -9,12 +9,12 @@ import passport from 'passport';
 
 dotenv.config();
 
-const PUB_KEY = process.env.PUB_KEY;
+const PUB_ACCESS_KEY = process.env.PUB_ACCESS_KEY;
 
 const options: StrategyOptions = {
   // Format --> Bearer <Token>
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: PUB_KEY,
+  secretOrKey: PUB_ACCESS_KEY,
   algorithms: ['RS256'],
 };
 
