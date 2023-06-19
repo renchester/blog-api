@@ -7,9 +7,12 @@ declare global {
     interface ProcessEnv {
       DB_CONNECTION_URL: string;
       SESSION_SECRET: string;
-      PRIV_KEY: string;
-      PUB_KEY: string;
+      PRIV_ACCESS_KEY: string;
+      PUB_ACCESS_KEY: string;
+      PRIV_REFRESH_KEY: string;
+      PUB_REFRESH_KEY: string;
       PORT?: string;
+      ENV?: 'development' | 'production';
     }
   }
 
@@ -82,6 +85,7 @@ declare global {
     first_name: string;
     last_name: string;
     admin?: boolean;
+    tokens: string[];
   }
 
   interface Tag {
