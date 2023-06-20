@@ -5,7 +5,7 @@ import {
   StrategyOptions,
 } from 'passport-jwt';
 import User from '../models/user';
-import passport from 'passport';
+import { PassportStatic } from 'passport';
 
 dotenv.config();
 
@@ -36,4 +36,6 @@ const strategy = new JwtStrategy(options, async (payload, done) => {
   }
 });
 
-passport.use(strategy);
+export default function (passport: PassportStatic) {
+  passport.use(strategy);
+}

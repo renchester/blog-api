@@ -18,13 +18,14 @@ import authRouter from './routes/auth';
 import corsOptions from './config/corsOptions';
 import credentials from './lib/credentials';
 
+dotenv.config();
+
 // Import the entire Passport Local Strategy module
 import './config/passportLocal';
 
 // Import Passport JWT Strategy module
-import './config/passportJWT';
-
-dotenv.config();
+import passportJWT from './config/passportJWT';
+passportJWT(passport);
 
 /**
  * ------------- GENERAL SETUP ----------------

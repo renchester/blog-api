@@ -25,14 +25,10 @@ export const authenticateJWT = (
       info: object | string | Array<string | undefined>,
     ) => {
       if (err) {
-        return next(err);
+        next(err);
       }
 
-      if (!user) {
-        res.status(404).json({ error: 'Unable to find user', success: false });
-      } else {
-        return next();
-      }
+      next();
     },
   )(req, res, next);
 
