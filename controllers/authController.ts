@@ -3,7 +3,6 @@ import passport from 'passport';
 import createError from 'http-errors';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { NextFunction, Request, Response } from 'express';
 
 import UserModel from '../models/user';
 import issueAccessToken from '../utils/issueAccessToken';
@@ -23,14 +22,6 @@ const authController = (() => {
 
     asyncHandler(async (req, res, next) => {
       const user = req.user as User;
-      const appUser = {
-        username: user.username,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        _id: user._id,
-        admin: user.admin,
-      };
 
       // Issue access and refresh token to new logged in user
       const accessToken = issueAccessToken(user, true);
@@ -47,7 +38,6 @@ const authController = (() => {
       // Send access token to be stored in app memory
       res.json({
         success: true,
-        user: appUser,
         accessToken,
       });
     }),
@@ -68,10 +58,10 @@ const authController = (() => {
         res.status(401).end();
       }
 
-      const isTokenInDB = await UserModel.findOne({ tokens: [refreshToken] });
+      const isTokenInDB = await UserModel.findOne({ tokens: refreshToken });
 
       if (!isTokenInDB) {
-        const err = createError(403, 'Token is expired or has been revoked');
+        const err = createError(403, 'Token is not valid');
         return next(err);
       }
 
@@ -91,7 +81,7 @@ const authController = (() => {
       if (decodedToken.exp && decodedToken.exp < Date.now() / 1000) {
         // Remove token from db if expired
         await UserModel.findOneAndUpdate(
-          { tokens: [refreshToken] },
+          { tokens: refreshToken },
           { $pull: { tokens: refreshToken } },
           { returnDocument: 'after' },
         );
@@ -108,7 +98,7 @@ const authController = (() => {
     }),
 
     // Issue new token
-    (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req, res, next) => {
       const refreshToken = req.cookies.jwt;
 
       try {
@@ -118,8 +108,16 @@ const authController = (() => {
           PUB_REFRESH_KEY,
         ) as JwtPayload;
 
+        // Get most recent user data
+        const newUser = await UserModel.findById(decodedToken.sub);
+
+        if (!newUser) {
+          const err = createError(404, 'Unable to find user');
+          return next(err);
+        }
+
         // Get new token if refreshToken is verified
-        const accessToken = issueAccessToken(decodedToken.user, false);
+        const accessToken = issueAccessToken(newUser, false);
 
         res.json({
           success: true,
@@ -128,7 +126,7 @@ const authController = (() => {
       } catch (error) {
         res.status(403).json({ error: 'Refresh token has been revoked' });
       }
-    },
+    }),
   ];
 
   const handle_logout = asyncHandler(async (req, res, next) => {
@@ -143,7 +141,7 @@ const authController = (() => {
     const userToken = cookies.jwt;
 
     const currentUser = await UserModel.findOneAndUpdate(
-      { tokens: [userToken] },
+      { tokens: userToken },
       { $pull: { tokens: userToken } },
       { returnDocument: 'after' },
     );
