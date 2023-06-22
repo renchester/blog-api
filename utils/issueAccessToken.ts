@@ -10,7 +10,15 @@ const PRIV_KEY = process.env.PRIV_ACCESS_KEY;
  */
 
 const issueAccessToken = (user: User, isNewLogin: boolean) => {
-  const { _id, username, email, first_name, last_name, admin } = user;
+  const {
+    _id,
+    username,
+    email,
+    first_name,
+    last_name,
+    is_admin,
+    is_verified_author,
+  } = user;
 
   const flag = isNewLogin ? 'login' : 'refresh';
 
@@ -25,7 +33,8 @@ const issueAccessToken = (user: User, isNewLogin: boolean) => {
       email,
       first_name,
       last_name,
-      admin,
+      is_admin,
+      is_verified_author,
     },
     flag,
   };
