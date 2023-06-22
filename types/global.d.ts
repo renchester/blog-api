@@ -23,7 +23,8 @@ declare global {
       email: string;
       first_name: string;
       last_name: string;
-      admin?: boolean;
+      is_admin: boolean;
+      is_verified_author: boolean;
     }
 
     interface Post {
@@ -60,6 +61,11 @@ declare global {
     }[];
     is_private: boolean;
     category: BlogCategory;
+    display_img: {
+      url: string;
+      owner: string;
+      source: string;
+    };
   }
 
   interface Comment {
@@ -84,7 +90,8 @@ declare global {
     salt: string;
     first_name: string;
     last_name: string;
-    admin?: boolean;
+    is_admin: boolean;
+    is_verified_author: boolean;
     tokens: string[];
   }
 
