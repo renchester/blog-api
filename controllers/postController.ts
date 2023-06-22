@@ -4,16 +4,10 @@ import asyncHandler from 'express-async-handler';
 import slugify from 'slugify';
 import createError from 'http-errors';
 
+import userProjection from '../config/projections/userProjection';
 import BlogPost from '../models/blogPost';
 
 const postController = (() => {
-  const userProjection = {
-    first_name: 1,
-    last_name: 1,
-    username: 1,
-    email: 1,
-  };
-
   const checkAuthorization = () =>
     asyncHandler(async (req, res, next) => {
       // Find post to be updated
@@ -46,6 +40,7 @@ const postController = (() => {
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
+      .populate('comments.author', userProjection)
       .populate('tags', { __v: 0 })
       .exec();
 
@@ -277,6 +272,8 @@ const postController = (() => {
       posts: filteredPosts,
     });
   });
+
+  const get_trending_posts = asyncHandler(async (req, res, next) => {});
 
   return {
     get_posts,

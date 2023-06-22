@@ -2,17 +2,10 @@ import { body, validationResult } from 'express-validator';
 import asyncHandler from 'express-async-handler';
 import createError from 'http-errors';
 
+import userProjection from '../config/projections/userProjection';
 import BlogPost from '../models/blogPost';
-import { CommentSchema } from '../models/comment';
 
 const commentController = (() => {
-  const userProjection = {
-    first_name: 1,
-    last_name: 1,
-    username: 1,
-    email: 1,
-  };
-
   const get_post_comments = asyncHandler(async (req, res, next) => {
     const targetPost = await BlogPost.findById(req.params.postid, { __v: 0 })
       .populate('comments')

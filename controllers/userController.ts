@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import asyncHandler from 'express-async-handler';
 import createError from 'http-errors';
 
+import userProjection from '../config/projections/userProjection';
 import User from '../models/user';
 import BlogPost from '../models/blogPost';
 import { checkPasswordValidity, genPassword } from '../utils/passwordUtils';
@@ -58,15 +59,6 @@ const validateLastName = () =>
   body('last_name', 'Last name must not be empty').trim().notEmpty().escape();
 
 const userController = (() => {
-  const userProjection = {
-    username: 1,
-    email: 1,
-    first_name: 1,
-    last_name: 1,
-    _id: 1,
-    isAdmin: 1,
-  };
-
   // Return list of all existing users in database
   const get_users = asyncHandler(async (req: Request, res: Response) => {
     const allUsers = await User.find({}, userProjection).exec();
@@ -392,7 +384,7 @@ const userController = (() => {
   const delete_user = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
       // Check if user is admin (has authorization to delete users)
-      const isAdmin = req.user?.admin;
+      const isAdmin = req.user?.is_admin;
 
       if (!isAdmin) {
         const err = createError(401, 'Unauthorized to delete user');

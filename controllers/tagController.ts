@@ -82,7 +82,7 @@ const tagController = (() => {
     // Process request after validation and sanitization
     asyncHandler(async (req, res, next) => {
       // Check if user is admin (has authorization to delete tag)
-      const isAdmin = req.user?.admin;
+      const isAdmin = req.user?.is_admin;
 
       if (!isAdmin) {
         const err = createError(401, 'Unauthorized to edit tag');
@@ -125,7 +125,7 @@ const tagController = (() => {
 
   const delete_tag = asyncHandler(async (req, res, next) => {
     // Check if user is admin (has authorization to delete tag)
-    const isAdmin = req.user?.admin;
+    const isAdmin = req.user?.is_admin;
 
     if (!isAdmin) {
       const err = createError(401, 'Unauthorized to delete tag');
