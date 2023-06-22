@@ -48,6 +48,21 @@ const postController = (() => {
   });
 
   const create_post = [
+    // Check if user is verified author
+    function (req: Request, res: Response, next: NextFunction) {
+      if (!req.user) {
+        const err = createError(401);
+        return next(err);
+      }
+
+      if (!req.user.is_verified_author) {
+        const err = createError(403, 'Only verified authors can create posts');
+        return next(err);
+      }
+
+      next();
+    },
+
     // Handle type of req.body.tag
     function (req: Request, res: Response, next: NextFunction) {
       if (!(req.body.tag instanceof Array)) {
@@ -82,47 +97,42 @@ const postController = (() => {
       // Extract user from JWT
       const user = req.user;
 
-      if (!user) {
-        const err = createError(401, 'Unauthorized to create post');
-        return next(err);
-      } else {
-        const slugifyOptions = {
-          replacement: '-',
-          remove: /[*+~.()'"!:@]/g,
-          lower: true,
-          strict: true,
-          locale: 'en',
-          trim: true,
-        };
+      const slugifyOptions = {
+        replacement: '-',
+        remove: /[*+~.()'"!:@]/g,
+        lower: true,
+        strict: true,
+        locale: 'en',
+        trim: true,
+      };
 
-        // Create new Post object with escaped data
-        const blogPost = new BlogPost({
-          title: req.body.title,
-          slug: slugify(req.body.title, slugifyOptions),
-          author: user._id,
-          editors: [],
-          content: req.body.content,
-          comments: [],
-          liked_by: [],
-          tags: req.body.tag,
-          edits: [],
-          category: req.body.category,
-          is_private: req.body.is_private || false,
+      // Create new Post object with escaped data
+      const blogPost = new BlogPost({
+        title: req.body.title,
+        slug: slugify(req.body.title, slugifyOptions),
+        author: user?._id,
+        editors: [],
+        content: req.body.content,
+        comments: [],
+        liked_by: [],
+        tags: req.body.tag,
+        edits: [],
+        category: req.body.category,
+        is_private: req.body.is_private || false,
+      });
+
+      const newPost = await blogPost.save();
+
+      // Send url of new post
+      res
+        .status(201)
+        .location(`/api/posts/${newPost._id}`)
+        .json({
+          success: true,
+          message: 'Successfully created post',
+          post: newPost,
+          link: `/api/posts/${newPost._id}`,
         });
-
-        const newPost = await blogPost.save();
-
-        // Send url of new post
-        res
-          .status(201)
-          .location(`/api/posts/${newPost._id}`)
-          .json({
-            success: true,
-            message: 'Successfully created post',
-            post: newPost,
-            link: `/api/posts/${newPost._id}`,
-          });
-      }
     }),
   ];
 
