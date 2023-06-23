@@ -5,6 +5,7 @@ import slugify from 'slugify';
 import createError from 'http-errors';
 
 import userProjection from '../config/projections/userProjection';
+import postProjection from '../config/projections/postProjection';
 import BlogPost from '../models/blogPost';
 
 const postController = (() => {
@@ -283,7 +284,16 @@ const postController = (() => {
     });
   });
 
-  const get_trending_posts = asyncHandler(async (req, res, next) => {});
+  const get_newest_posts = asyncHandler(async (req, res, next) => {
+    const newestPosts = await BlogPost.find({})
+      .sort({ date_created: -1 })
+      .limit(10)
+      .exec();
+
+    res.json({
+      posts: newestPosts,
+    });
+  });
 
   return {
     get_posts,
@@ -292,6 +302,7 @@ const postController = (() => {
     edit_post,
     delete_post,
     get_posts_by_tagname,
+    get_newest_posts,
     edit_privacy,
   };
 })();
