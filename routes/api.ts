@@ -88,11 +88,6 @@ router.delete(
 // GET request to retrieve posts by user
 router.get('/users/:id/posts', userController.get_user_posts);
 
-// GET request to retrieve specific user by email
-router.get('/users/email/:email', userController.get_user_by_email);
-
-// GET request to retrieve specific user by username
-router.get('/users/username/:username', userController.get_user_by_username);
 /**
  * ------------- POST ROUTES -------------
  */
@@ -108,8 +103,14 @@ router.post(
   postController.create_post,
 );
 
+// GET request to retrieve 10 newest posts
+router.get('/posts/new', postController.get_newest_posts);
+
+// GET request to retrieve posts by tagname
+router.get('/posts/tags/:tagname', postController.get_posts_by_tagname);
+
 // GET request to retrieve post
-router.get('/posts/:id', postController.get_post_by_id);
+router.get('/posts/:slug', postController.get_post_by_slug);
 
 // PATCH request to update post body
 router.patch(
@@ -134,9 +135,6 @@ router.delete(
   retrieveUserFromJWT,
   postController.delete_post,
 );
-
-// GET request to retrieve posts by tagname
-router.get('/posts/tags/:tagname', postController.get_posts_by_tagname);
 
 /**
  * ------------- COMMENT ROUTES -------------

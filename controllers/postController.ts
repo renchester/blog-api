@@ -12,7 +12,7 @@ const postController = (() => {
   const checkAuthorization = () =>
     asyncHandler(async (req, res, next) => {
       // Find post to be updated
-      const targetPost = await BlogPost.findById(req.params.id);
+      const targetPost = await BlogPost.findById(req.params.id, postProjection);
 
       if (!targetPost) {
         const err = createError(404, 'Unable to find post');
@@ -37,7 +37,7 @@ const postController = (() => {
 
   // Return list of all posts in database
   const get_posts = asyncHandler(async (req, res, next) => {
-    const allPosts = await BlogPost.find({}, { __v: 0 })
+    const allPosts = await BlogPost.find({}, postProjection)
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
@@ -81,6 +81,7 @@ const postController = (() => {
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
     body('content', 'Content must not be empty').trim().notEmpty().escape(),
     body('tag.*').escape(),
+    body('display_img.url').notEmpty().escape(),
     body('category', 'Category must not be empty').trim().notEmpty().escape(),
     body('is_private').escape(),
 
@@ -137,8 +138,11 @@ const postController = (() => {
     }),
   ];
 
-  const get_post_by_id = asyncHandler(async (req, res, next) => {
-    const post = await BlogPost.findById(req.params.id, { __v: 0 })
+  const get_post_by_slug = asyncHandler(async (req, res, next) => {
+    const post = await BlogPost.findOne(
+      { slug: req.params.slug },
+      postProjection,
+    )
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
@@ -171,7 +175,7 @@ const postController = (() => {
         return next(err);
       }
 
-      const targetPost = await BlogPost.findById(req.params.id);
+      const targetPost = await BlogPost.findById(req.params.id, postProjection);
 
       if (!targetPost) {
         const err = createError(404, 'Unable to find post');
@@ -267,7 +271,7 @@ const postController = (() => {
   ];
 
   const get_posts_by_tagname = asyncHandler(async (req, res, next) => {
-    const posts = await BlogPost.find({}, { __v: 0 })
+    const posts = await BlogPost.find({}, postProjection)
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
@@ -285,9 +289,11 @@ const postController = (() => {
   });
 
   const get_newest_posts = asyncHandler(async (req, res, next) => {
-    const newestPosts = await BlogPost.find({})
+    const { limit = 10 } = req.query;
+
+    const newestPosts = await BlogPost.find({}, postProjection)
       .sort({ date_created: -1 })
-      .limit(10)
+      .limit(+limit)
       .exec();
 
     res.json({
@@ -298,7 +304,7 @@ const postController = (() => {
   return {
     get_posts,
     create_post,
-    get_post_by_id,
+    get_post_by_slug,
     edit_post,
     delete_post,
     get_posts_by_tagname,
