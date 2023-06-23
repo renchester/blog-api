@@ -10,30 +10,13 @@ const PRIV_KEY = process.env.PRIV_REFRESH_KEY;
  */
 
 const issueRefreshToken = (user: User) => {
-  const {
-    _id,
-    username,
-    email,
-    first_name,
-    last_name,
-    is_admin,
-    is_verified_author,
-  } = user;
+  const { _id } = user;
 
   // Refresh token has a lifetime of 30days
   const expiresIn = '30d';
 
   const payload = {
     sub: _id,
-    user: {
-      _id,
-      username,
-      email,
-      first_name,
-      last_name,
-      is_admin,
-      is_verified_author,
-    },
   };
 
   const signedToken = jsonwebtoken.sign(payload, PRIV_KEY, {

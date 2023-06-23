@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 
 import User from '../models/user';
 import createError from 'http-errors';
+import userProjection from '../config/projections/userProjection';
 
 dotenv.config();
 
@@ -47,14 +48,7 @@ export const retrieveUserFromJWT = asyncHandler(
       const decodedToken = jwt.verify(token, PUB_ACCESS_KEY);
 
       // Find user in database
-      const user = await User.findById(decodedToken.sub, {
-        _id: 1,
-        admin: 1,
-        username: 1,
-        email: 1,
-        first_name: 1,
-        last_name: 1,
-      });
+      const user = await User.findById(decodedToken.sub, userProjection);
 
       if (user !== null) {
         // Pass the user to the endpoints
