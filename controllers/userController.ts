@@ -8,6 +8,23 @@ import User from '../models/user';
 import BlogPost from '../models/blogPost';
 import { checkPasswordValidity, genPassword } from '../utils/passwordUtils';
 
+const checkAdminAuthorization = () =>
+  asyncHandler(async (req, res, next) => {
+    const user = req.user;
+
+    if (!user) {
+      const err = createError(401);
+      return next(err);
+    }
+
+    if (!user.is_admin) {
+      const err = createError(403);
+      return next(err);
+    }
+
+    next();
+  });
+
 const checkAuthorization = () =>
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     // Find user to be updated
@@ -60,10 +77,45 @@ const validateLastName = () =>
 
 const userController = (() => {
   // Return list of all existing users in database
-  const get_users = asyncHandler(async (req: Request, res: Response) => {
-    const allUsers = await User.find({}, userProjection).exec();
-    res.json({ users: allUsers });
-  });
+  const get_users = [
+    // Query handler
+    asyncHandler(async (req, res, next) => {
+      const { username, email } = req.query;
+
+      if (username) {
+        const user = await User.findOne({ username }, userProjection).exec();
+
+        if (!user) {
+          const err = createError(404, 'Unable to find user');
+          return next(err);
+        }
+
+        res.json({ user, success: true });
+      }
+
+      if (email) {
+        const user = await User.findOne({ email }, userProjection).exec();
+
+        if (!user) {
+          const err = createError(404, 'Unable to find user');
+          return next(err);
+        }
+
+        res.json({ user, success: true });
+      }
+
+      next();
+    }),
+
+    checkAdminAuthorization(),
+
+    // Get all users
+    asyncHandler(async (req: Request, res: Response) => {
+      const allUsers = await User.find({}, userProjection).exec();
+
+      res.json({ users: allUsers, success: true });
+    }),
+  ];
 
   // Create a new user and save to database
   const create_user = [
@@ -129,7 +181,7 @@ const userController = (() => {
         return next(err);
       }
 
-      res.json({ user });
+      res.json({ user, success: true });
     },
   );
 
@@ -156,14 +208,12 @@ const userController = (() => {
         return next(err);
       }
 
-      const updatedUser = new User({
-        _id: req.params.id, // Assign the old id
+      const updatedUser = new User<User>({
+        ...user,
         username: req.body.username,
         email: req.body.email,
         first_name: req.body.first_name,
         last_name: req.body.last_name,
-        salt: user.salt,
-        hash: user.hash,
       });
 
       if (!errors.isEmpty()) {
@@ -428,34 +478,34 @@ const userController = (() => {
     res.json({ posts });
   });
 
-  const get_user_by_username = asyncHandler(async (req, res, next) => {
-    const user = await User.findOne(
-      { username: req.params.username },
-      userProjection,
-    );
+  // const get_user_by_username = asyncHandler(async (req, res, next) => {
+  //   const user = await User.findOne(
+  //     { username: req.params.username },
+  //     userProjection,
+  //   );
 
-    if (!user) {
-      const err = createError(404, 'User not found');
-      return next(err);
-    }
+  //   if (!user) {
+  //     const err = createError(404, 'User not found');
+  //     return next(err);
+  //   }
 
-    res.json({ user });
-  });
+  //   res.json({ user });
+  // });
 
-  const get_user_by_email = asyncHandler(async (req, res, next) => {
-    const user = await User.findOne(
-      { email: req.params.email },
-      userProjection,
-    );
-    // console.log(user);
+  // const get_user_by_email = asyncHandler(async (req, res, next) => {
+  //   const user = await User.findOne(
+  //     { email: req.params.email },
+  //     userProjection,
+  //   );
+  //   // console.log(user);
 
-    if (!user) {
-      const err = createError(404, 'User not found');
-      return next(err);
-    }
+  //   if (!user) {
+  //     const err = createError(404, 'User not found');
+  //     return next(err);
+  //   }
 
-    res.json({ user });
-  });
+  //   res.json({ user });
+  // });
 
   return {
     get_users,
@@ -469,8 +519,8 @@ const userController = (() => {
     update_password,
     delete_user,
     get_user_posts,
-    get_user_by_username,
-    get_user_by_email,
+    // get_user_by_username,
+    // get_user_by_email,
   };
 })();
 
