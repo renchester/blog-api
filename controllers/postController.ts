@@ -325,6 +325,138 @@ const postController = (() => {
     });
   });
 
+  const getTargetPost = asyncHandler(async (req, res, next) => {
+    const user = req.user;
+
+    if (!user) {
+      const err = createError(403);
+      return next(err);
+    }
+
+    const targetPost = await BlogPost.findOne({
+      slug: req.params.slug,
+    }).populate('liked_by', userProjection);
+
+    if (!targetPost) {
+      const err = createError(404, 'Unable to find post');
+      return next(err);
+    } else {
+      req.post = targetPost;
+      next();
+    }
+  });
+
+  const get_post_likes = [
+    getTargetPost,
+    function (req: Request, res: Response, next: NextFunction) {
+      const post = req.post as BlogPost;
+
+      if (!post) {
+        const err = createError(500);
+        return next(err);
+      }
+
+      res.json({
+        post: `/api/posts/${post.slug}`,
+        likes: post.liked_by,
+      });
+    },
+  ];
+
+  const add_post_like = [
+    getTargetPost,
+
+    asyncHandler(async (req, res, next) => {
+      const user = req.user;
+      if (!user) {
+        const err = createError(403);
+        return next(err);
+      }
+
+      const post = req.post as BlogPost;
+      if (!post) {
+        const err = createError(500);
+        return next(err);
+      }
+
+      const isPostLikedByUser = post.liked_by.find((liker) =>
+        liker._id.equals(user._id),
+      );
+
+      if (isPostLikedByUser) {
+        res.status(409).end();
+      } else {
+        // Update post
+        const updatedPost = await BlogPost.findOneAndUpdate(
+          {
+            slug: req.params.slug,
+          },
+          { $push: { liked_by: user._id } },
+          { runValidators: true, returnDocument: 'after' },
+        );
+        const postLink = `/api/posts/${req.params.slug}`;
+
+        if (updatedPost) {
+          res.status(201).location(postLink).json({
+            success: true,
+            message: 'Successfully added a like to post',
+            link: postLink,
+          });
+        } else {
+          const err = createError(500);
+          return next(err);
+        }
+      }
+    }),
+  ];
+
+  const remove_post_like = [
+    getTargetPost,
+
+    asyncHandler(async (req, res, next) => {
+      const user = req.user;
+      if (!user) {
+        const err = createError(403);
+        return next(err);
+      }
+
+      const post = req.post as BlogPost;
+      if (!post) {
+        const err = createError(500);
+        return next(err);
+      }
+
+      const isPostLikedByUser = post.liked_by.find((liker) =>
+        liker._id.equals(user._id),
+      );
+
+      if (!isPostLikedByUser) {
+        res.status(409).end();
+      } else {
+        // Update post
+        const updatedPost = await BlogPost.findOneAndUpdate(
+          {
+            slug: req.params.slug,
+          },
+          { $pull: { liked_by: user._id } },
+          { runValidators: true, returnDocument: 'after' },
+        );
+        const postLink = `/api/posts/${req.params.slug}`;
+
+        if (updatedPost) {
+          res.location(postLink).json({
+            success: true,
+            message: 'Successfully removed a like in post',
+            link: postLink,
+          });
+        } else {
+          const err = createError(500);
+          return next(err);
+        }
+      }
+    }),
+  ];
+
   return {
     get_posts,
     create_post,
@@ -335,6 +467,9 @@ const postController = (() => {
     get_posts_by_category,
     get_newest_posts,
     edit_privacy,
+    get_post_likes,
+    add_post_like,
+    remove_post_like,
   };
 })();
 

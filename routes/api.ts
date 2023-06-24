@@ -115,6 +115,30 @@ router.get('/posts/category/:category', postController.get_posts_by_category);
 // GET request to retrieve post
 router.get('/posts/:slug', postController.get_post_by_slug);
 
+// GET request for post likes
+router.get(
+  '/posts/:slug/likes',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  postController.get_post_likes,
+);
+
+// POST request for adding like to post
+router.post(
+  '/posts/:slug/likes',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  postController.add_post_like,
+);
+
+// DELETE request for removing post like
+router.delete(
+  '/posts/:slug/likes',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  postController.remove_post_like,
+);
+
 // PATCH request to update post body
 router.patch(
   '/posts/:id/content',
