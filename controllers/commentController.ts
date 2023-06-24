@@ -1,6 +1,7 @@
 import { body, validationResult } from 'express-validator';
 import asyncHandler from 'express-async-handler';
 import createError from 'http-errors';
+import { Request, Response, NextFunction } from 'express';
 
 import userProjection from '../config/projections/userProjection';
 import BlogPost from '../models/blogPost';
@@ -64,7 +65,7 @@ const commentController = (() => {
       targetPost.comments.push({
         author: user._id,
         content: req.body.content,
-        comment_level: parentComment?.level + 1 || 0,
+        comment_level: parentComment?.level + 1 || 1,
         parent_comment_id: parentComment?._id,
         liked_by: [],
         edits: [],
@@ -251,12 +252,180 @@ const commentController = (() => {
     }),
   ];
 
+  const getTargetComment = asyncHandler(async (req, res, next) => {
+    const user = req.user;
+
+    // Check if current user exists
+    if (!user) {
+      const err = createError(403);
+      return next(err);
+    }
+
+    const parentPost = await BlogPost.findById(req.params.postid)
+      .populate('comments', { __v: 0 })
+      .populate('comments.liked_by', userProjection)
+      .exec();
+
+    if (!parentPost) {
+      const err = createError(
+        404,
+        'Unable to find parent post for this comment',
+      );
+      return next(err);
+    }
+
+    const targetComment = parentPost.comments.find(
+      (currComment) => currComment._id.toString() === req.params.commentid,
+    );
+
+    if (!targetComment) {
+      const err = createError(404, 'Unable to find comment');
+      return next(err);
+    } else {
+      req.post = parentPost;
+      req.comment = targetComment;
+      next();
+    }
+  });
+
+  const get_comment_likes = [
+    getTargetComment,
+    function (req: Request, res: Response, next: NextFunction) {
+      const parentPost = req.post as BlogPost;
+      const targetComment = req.comment as Comment;
+
+      if (!targetComment || !parentPost) {
+        const err = createError(500);
+        next(err);
+      }
+
+      res.json({
+        comment: `/api/posts/${parentPost._id}/comments/${targetComment._id}`,
+        likes: targetComment.liked_by,
+      });
+    },
+  ];
+
+  const add_comment_like = [
+    getTargetComment,
+
+    asyncHandler(async (req, res, next) => {
+      const user = req.user;
+      if (!user) {
+        const err = createError(403);
+        return next(err);
+      }
+
+      const targetComment = req.comment as Comment;
+      const parentPost = req.post as BlogPost;
+      if (!parentPost || !targetComment) {
+        const err = createError(500); // comment and post should have been declared already
+        return next(err);
+      }
+
+      const isCommentLikedByUser = targetComment.liked_by.find((liker) =>
+        liker._id.equals(user?._id),
+      );
+
+      if (isCommentLikedByUser) {
+        res.status(409).end();
+      } else {
+        // Process adding a like
+        targetComment.liked_by.push(user._id);
+
+        // Update post comments
+        const otherComments = parentPost.comments.filter(
+          (currComment) => !currComment._id.equals(targetComment._id),
+        );
+        const updatedPostComments = [...otherComments, targetComment];
+
+        const updatedPost = await BlogPost.findByIdAndUpdate(
+          req.params.postid,
+          { comments: updatedPostComments },
+          { runValidators: true, returnDocument: 'after' },
+        );
+        const postLink = `/api/posts/${req.params.postid}/comments/${req.params.commentid}`;
+
+        if (updatedPost) {
+          res.location(postLink).json({
+            success: true,
+            message: 'Successfully added a like to comment',
+            link: postLink,
+          });
+        } else {
+          const err = createError(500);
+          return next(err);
+        }
+      }
+    }),
+  ];
+
+  const remove_comment_like = [
+    getTargetComment,
+
+    asyncHandler(async (req, res, next) => {
+      const user = req.user;
+      if (!user) {
+        const err = createError(403);
+        return next(err);
+      }
+
+      const targetComment = req.comment as Comment;
+      const parentPost = req.post as BlogPost;
+      if (!parentPost || !targetComment) {
+        const err = createError(500); // comment and post should have been declared already
+        return next(err);
+      }
+
+      const isCommentLikedByUser = targetComment.liked_by.find((liker) =>
+        liker._id.equals(user?._id),
+      );
+
+      if (!isCommentLikedByUser) {
+        res.status(409).end();
+      } else {
+        // Update comment likes
+        const updatedLikes = targetComment.liked_by.filter(
+          (liker) => !liker._id.equals(user._id),
+        );
+        targetComment.liked_by = updatedLikes;
+
+        // Update comments
+        const otherComments = parentPost.comments.filter(
+          (currComment) => !currComment._id.equals(targetComment._id),
+        );
+        const updatedPostComments = [...otherComments, targetComment];
+
+        const updatedPost = await BlogPost.findByIdAndUpdate(
+          req.params.postid,
+          { comments: updatedPostComments },
+          { runValidators: true, returnDocument: 'after' },
+        );
+        const postLink = `/api/posts/${req.params.postid}/comments/${req.params.commentid}`;
+
+        if (updatedPost) {
+          res.location(postLink).json({
+            success: true,
+            message: 'Successfully removed a like in comment',
+            link: postLink,
+          });
+        } else {
+          const err = createError(500);
+          return next(err);
+        }
+      }
+    }),
+  ];
+
   return {
     get_post_comments,
     create_comment,
     get_comment_by_id,
     edit_comment,
     delete_comment,
+    get_comment_likes,
+    add_comment_like,
+    remove_comment_like,
   };
 })();
 

@@ -107,7 +107,10 @@ router.post(
 router.get('/posts/new', postController.get_newest_posts);
 
 // GET request to retrieve posts by tagname
-router.get('/posts/tags/:tagname', postController.get_posts_by_tagname);
+router.get('/posts/tag/:tagname', postController.get_posts_by_tagname);
+
+// GET request to retrive posts by category
+router.get('/posts/category/:category', postController.get_posts_by_category);
 
 // GET request to retrieve post
 router.get('/posts/:slug', postController.get_post_by_slug);
@@ -163,6 +166,30 @@ router.patch(
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.edit_comment,
+);
+
+// GET request to get comment likes
+router.get(
+  '/posts/:postid/comments/:commentid/likes',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  commentController.get_comment_likes,
+);
+
+// POST request to add a like to comment
+router.post(
+  '/posts/:postid/comments/:commentid/likes',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  commentController.add_comment_like,
+);
+
+// DELETE request to remove a like in comment
+router.delete(
+  '/posts/:postid/comments/:commentid/likes',
+  authenticateJWT,
+  retrieveUserFromJWT,
+  commentController.remove_comment_like,
 );
 
 // DELETE request to delete comment
