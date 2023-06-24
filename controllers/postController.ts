@@ -7,6 +7,7 @@ import createError from 'http-errors';
 import userProjection from '../config/projections/userProjection';
 import postProjection from '../config/projections/postProjection';
 import BlogPost from '../models/blogPost';
+import TagModel from '../models/tag';
 
 const postController = (() => {
   const checkAuthorization = () =>
@@ -271,20 +272,43 @@ const postController = (() => {
   ];
 
   const get_posts_by_tagname = asyncHandler(async (req, res, next) => {
-    const posts = await BlogPost.find({}, postProjection)
+    const tag = await TagModel.findOne(
+      { name: req.params.tagName },
+      { __v: 0 },
+    );
+
+    if (!tag) {
+      const err = createError(404, 'Unable to find posts with this tagname');
+      return next(err);
+    }
+
+    const posts = await BlogPost.find({ tags: tag._id }, postProjection)
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
       .populate('tags', { __v: 0 })
       .exec();
 
-    const filteredPosts = posts.filter((post) =>
-      post.tags.find((tag: any) => tag.name === req.params.tagname),
-    );
-
     res.json({
       tag: req.params.tagname,
-      posts: filteredPosts,
+      posts,
+    });
+  });
+
+  const get_posts_by_category = asyncHandler(async (req, res, next) => {
+    const posts = await BlogPost.find(
+      { category: req.params.category },
+      postProjection,
+    )
+      .populate('author', userProjection)
+      .populate('editors', userProjection)
+      .populate('liked_by', userProjection)
+      .populate('tags', { __v: 0 })
+      .exec();
+
+    res.json({
+      category: req.params.category,
+      posts,
     });
   });
 
@@ -308,6 +332,7 @@ const postController = (() => {
     edit_post,
     delete_post,
     get_posts_by_tagname,
+    get_posts_by_category,
     get_newest_posts,
     edit_privacy,
   };
