@@ -141,7 +141,7 @@ router.delete(
 
 // PATCH request to update post body
 router.patch(
-  '/posts/:id/content',
+  '/posts/:slug/content',
   authenticateJWT,
   retrieveUserFromJWT,
   postController.edit_post,
@@ -149,7 +149,7 @@ router.patch(
 
 // PATCH request to update post privacy
 router.patch(
-  '/posts/:id/content',
+  '/posts/:slug/content',
   authenticateJWT,
   retrieveUserFromJWT,
   postController.edit_privacy,
@@ -157,7 +157,7 @@ router.patch(
 
 // DELETE request for deleting post
 router.delete(
-  '/posts/:id',
+  '/posts/:slug',
   authenticateJWT,
   retrieveUserFromJWT,
   postController.delete_post,
@@ -168,11 +168,11 @@ router.delete(
  */
 
 // GET request to retrieve post comments
-router.get('/posts/:postid/comments', commentController.get_post_comments);
+router.get('/posts/:slug/comments', commentController.get_post_comments);
 
 // POST request to add new comment
 router.post(
-  '/posts/:postid/comments',
+  '/posts/:slug/comments',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.create_comment,
@@ -180,13 +180,13 @@ router.post(
 
 // GET request to retrieve a specific comment
 router.get(
-  '/posts/:postid/comments/:commentid',
+  '/posts/:slug/comments/:commentid',
   commentController.get_comment_by_id,
 );
 
 // PATCH request to update comment body
 router.patch(
-  '/posts/:postid/comments/:commentid',
+  '/posts/:slug/comments/:commentid',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.edit_comment,
@@ -194,7 +194,7 @@ router.patch(
 
 // GET request to get comment likes
 router.get(
-  '/posts/:postid/comments/:commentid/likes',
+  '/posts/:slug/comments/:commentid/likes',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.get_comment_likes,
@@ -202,7 +202,7 @@ router.get(
 
 // POST request to add a like to comment
 router.post(
-  '/posts/:postid/comments/:commentid/likes',
+  '/posts/:slug/comments/:commentid/likes',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.add_comment_like,
@@ -210,7 +210,7 @@ router.post(
 
 // DELETE request to remove a like in comment
 router.delete(
-  '/posts/:postid/comments/:commentid/likes',
+  '/posts/:slug/comments/:commentid/likes',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.remove_comment_like,
@@ -218,7 +218,7 @@ router.delete(
 
 // DELETE request to delete comment
 router.delete(
-  '/posts/:postid/comments/:commentid',
+  '/posts/:slug/comments/:commentid',
   authenticateJWT,
   retrieveUserFromJWT,
   commentController.delete_comment,

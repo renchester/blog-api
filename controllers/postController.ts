@@ -13,7 +13,10 @@ const postController = (() => {
   const checkAuthorization = () =>
     asyncHandler(async (req, res, next) => {
       // Find post to be updated
-      const targetPost = await BlogPost.findById(req.params.id, postProjection);
+      const targetPost = await BlogPost.findOne(
+        { slug: req.params.slug },
+        postProjection,
+      );
 
       if (!targetPost) {
         const err = createError(404, 'Unable to find post');
@@ -125,17 +128,15 @@ const postController = (() => {
       });
 
       const newPost = await blogPost.save();
+      const postLink = `/api/posts/${newPost.slug}`;
 
       // Send url of new post
-      res
-        .status(201)
-        .location(`/api/posts/${newPost._id}`)
-        .json({
-          success: true,
-          message: 'Successfully created post',
-          post: newPost,
-          link: `/api/posts/${newPost._id}`,
-        });
+      res.status(201).location(postLink).json({
+        success: true,
+        message: 'Successfully created post',
+        post: newPost,
+        link: postLink,
+      });
     }),
   ];
 
@@ -176,7 +177,10 @@ const postController = (() => {
         return next(err);
       }
 
-      const targetPost = await BlogPost.findById(req.params.id, postProjection);
+      const targetPost = await BlogPost.findOne(
+        { slug: req.params.slug },
+        postProjection,
+      );
 
       if (!targetPost) {
         const err = createError(404, 'Unable to find post');
@@ -189,13 +193,14 @@ const postController = (() => {
 
       // Update the record
       await targetPost.save();
+      const postLink = `/api/posts/${req.params.slug}`;
 
       // Send location and success result
-      res.location(`/api/posts/${req.params.id}`).json({
+      res.location(postLink).json({
         success: true,
         message: 'Successfully updated post content',
         post: targetPost,
-        link: `/api/posts/${req.params.id}`,
+        link: postLink,
       });
     }),
   ];
@@ -218,19 +223,21 @@ const postController = (() => {
         return next(err);
       } else {
         // No errors. Update record and return new user.
-        const post = await BlogPost.findByIdAndUpdate(
-          req.params.id,
+        const post = await BlogPost.findOneAndUpdate(
+          { slug: req.params.slug },
           {
             is_private: req.body.is_private,
           },
           { runValidators: true, returnDocument: 'after' },
         );
 
-        res.location(`/api/posts/${req.params.id}`).json({
+        const postLink = `/api/posts/${req.params.slug}`;
+
+        res.location(postLink).json({
           success: true,
           message: `Successfully updated post privacy`,
           post,
-          link: `/api/posts/${req.params.id}`,
+          link: postLink,
         });
       }
     }),
@@ -240,7 +247,7 @@ const postController = (() => {
     // Check if user has the authorization to delete post
     asyncHandler(async (req, res, next) => {
       // Find post to be updated
-      const targetPost = await BlogPost.findById(req.params.id);
+      const targetPost = await BlogPost.findOne({ slug: req.params.slug });
 
       if (!targetPost) {
         const err = createError(404, 'Unable to find post');
@@ -260,7 +267,7 @@ const postController = (() => {
 
     // Process deletion of post
     asyncHandler(async (req, res, next) => {
-      const result = await BlogPost.findByIdAndDelete(req.params.id);
+      const result = await BlogPost.findOneAndDelete({ slug: req.params.slug });
 
       if (result) {
         res.status(204).end();

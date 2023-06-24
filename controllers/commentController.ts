@@ -8,8 +8,11 @@ import BlogPost from '../models/blogPost';
 
 const commentController = (() => {
   const get_post_comments = asyncHandler(async (req, res, next) => {
-    const targetPost = await BlogPost.findById(req.params.postid, { __v: 0 })
-      .populate('comments')
+    const targetPost = await BlogPost.findOne(
+      { slug: req.params.slug },
+      { __v: 0 },
+    )
+      .populate('comments', { __v: 0 })
       .populate('comments.author', userProjection)
       .exec();
 
@@ -19,7 +22,7 @@ const commentController = (() => {
     }
 
     res.json({
-      postid: targetPost._id,
+      post_link: `/api/posts/${targetPost.slug}`,
       comments: targetPost.comments,
     });
   });
@@ -51,7 +54,7 @@ const commentController = (() => {
       const parentComment = req.body.parent_comment;
 
       // Get parent post
-      const targetPost = await BlogPost.findById(req.params.postid);
+      const targetPost = await BlogPost.findOne({ slug: req.params.slug });
 
       if (!targetPost) {
         const err = createError(
@@ -77,24 +80,26 @@ const commentController = (() => {
           req.user?._id.equals(comment.author) &&
           comment.content === req.body.content,
       );
+      const commentLink = `/api/posts/${updatedPost.slug}/comments/${newComment?._id}`;
+      const postLink = `/api/posts/${updatedPost.slug}`;
 
       // Send url of new comment
-      res
-        .status(201)
-        .location(`/api/posts/${updatedPost._id}/comments/${newComment?._id}`)
-        .json({
-          success: true,
-          message: 'Successfully created comment',
-          comment: newComment,
-          link: `/api/posts/${updatedPost._id}/comments/${newComment?._id}`,
-          post_link: `/api/posts/${updatedPost._id}`,
-        });
+      res.status(201).location(commentLink).json({
+        success: true,
+        message: 'Successfully created comment',
+        comment: newComment,
+        link: commentLink,
+        post_link: postLink,
+      });
     }),
   ];
 
   const get_comment_by_id = asyncHandler(async (req, res, next) => {
-    const parentPost = await BlogPost.findById(req.params.postid, { __v: 0 })
-      .populate('comments')
+    const parentPost = await BlogPost.findOne(
+      { slug: req.params.slug },
+      { __v: 0 },
+    )
+      .populate('comments', { __v: 0 })
       .populate('comments.author', userProjection)
       .populate('comments.liked_by', userProjection)
       .exec();
@@ -123,7 +128,7 @@ const commentController = (() => {
     // Check if current user has authorization to edit the comment
     asyncHandler(async (req, res, next) => {
       // Find comment to be updated
-      const parentPost = await BlogPost.findById(req.params.postid);
+      const parentPost = await BlogPost.findOne({ slug: req.params.slug });
 
       if (!parentPost) {
         const err = createError(
@@ -166,7 +171,7 @@ const commentController = (() => {
         return next(err);
       }
 
-      const parentPost = await BlogPost.findById(req.params.postid);
+      const parentPost = await BlogPost.findOne({ slug: req.params.slug });
 
       if (!parentPost) {
         const err = createError(
@@ -195,17 +200,17 @@ const commentController = (() => {
       const updatedComment = parentPost.comments.find((comment) =>
         comment._id.equals(req.params.commentid),
       );
+      const commentLink = `/api/posts/${parentPost.slug}/comments/${targetComment._id}`;
+      const postLink = `/api/posts/${parentPost.slug}`;
 
       // Send location and success result
-      res
-        .location(`/api/posts/${parentPost._id}/comments/${targetComment._id}`)
-        .json({
-          success: true,
-          message: 'Successfully updated comment',
-          post: parentPost,
-          comment: updatedComment,
-          link: `/api/posts/${req.params.id}`,
-        });
+      res.location(commentLink).json({
+        success: true,
+        message: 'Successfully updated comment',
+        comment: updatedComment,
+        link: commentLink,
+        post_link: postLink,
+      });
     }),
   ];
 
@@ -213,7 +218,7 @@ const commentController = (() => {
     // Check if user has the authorization to delete comment
     asyncHandler(async (req, res, next) => {
       // Find comment to be deleted
-      const parentPost = await BlogPost.findById(req.params.postid)
+      const parentPost = await BlogPost.findOne({ slug: req.params.slug })
         .populate('comments')
         .populate('comments.author')
         .exec();
@@ -243,7 +248,7 @@ const commentController = (() => {
       } else {
         // Delete the comment record
         await BlogPost.findOneAndUpdate(
-          { _id: req.params.postid },
+          { slug: req.params.slug },
           { $pull: { comments: { _id: req.params.commentid } } },
         );
 
@@ -261,7 +266,7 @@ const commentController = (() => {
       return next(err);
     }
 
-    const parentPost = await BlogPost.findById(req.params.postid)
+    const parentPost = await BlogPost.findOne({ slug: req.params.slug })
       .populate('comments', { __v: 0 })
       .populate('comments.liked_by', userProjection)
       .exec();
@@ -300,7 +305,7 @@ const commentController = (() => {
       }
 
       res.json({
-        comment: `/api/posts/${parentPost._id}/comments/${targetComment._id}`,
+        comment: `/api/posts/${parentPost.slug}/comments/${targetComment._id}`,
         likes: targetComment.liked_by,
       });
     },
@@ -339,12 +344,12 @@ const commentController = (() => {
         );
         const updatedPostComments = [...otherComments, targetComment];
 
-        const updatedPost = await BlogPost.findByIdAndUpdate(
-          req.params.postid,
+        const updatedPost = await BlogPost.findOneAndUpdate(
+          { slug: req.params.slug },
           { comments: updatedPostComments },
           { runValidators: true, returnDocument: 'after' },
         );
-        const postLink = `/api/posts/${req.params.postid}/comments/${req.params.commentid}`;
+        const postLink = `/api/posts/${req.params.slug}/comments/${req.params.commentid}`;
 
         if (updatedPost) {
           res.location(postLink).json({
@@ -396,12 +401,12 @@ const commentController = (() => {
         );
         const updatedPostComments = [...otherComments, targetComment];
 
-        const updatedPost = await BlogPost.findByIdAndUpdate(
-          req.params.postid,
+        const updatedPost = await BlogPost.findOneAndUpdate(
+          { slug: req.params.slug },
           { comments: updatedPostComments },
           { runValidators: true, returnDocument: 'after' },
         );
-        const postLink = `/api/posts/${req.params.postid}/comments/${req.params.commentid}`;
+        const postLink = `/api/posts/${req.params.slug}/comments/${req.params.commentid}`;
 
         if (updatedPost) {
           res.location(postLink).json({
