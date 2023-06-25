@@ -10,34 +10,34 @@ import BlogPost from '../models/blogPost';
 import TagModel from '../models/tag';
 
 const postController = (() => {
-  const checkAuthorization = () =>
-    asyncHandler(async (req, res, next) => {
-      // Find post to be updated
-      const targetPost = await BlogPost.findOne(
-        { slug: req.params.slug },
-        postProjection,
-      );
+  const checkAuthorization = asyncHandler(async (req, res, next) => {
+    // Find post to be updated
+    const targetPost = await BlogPost.findOne(
+      { slug: req.params.slug },
+      postProjection,
+    );
 
-      if (!targetPost) {
-        const err = createError(404, 'Unable to find post');
-        return next(err);
-      }
+    if (!targetPost) {
+      const err = createError(404, 'Unable to find post');
+      return next(err);
+    }
 
-      // Check if user is an authorized editor
-      const isEditor = targetPost.editors?.find((editor) =>
-        req.user?._id.equals(editor._id),
-      );
+    // Check if user is an authorized editor
+    const isEditor = targetPost.editors?.find((editor) =>
+      req.user?._id.equals(editor._id),
+    );
 
-      // Check if user is the author
-      const isAuthor = req.user?._id.equals(targetPost.author._id);
+    // Check if user is the author
+    const isAuthor = req.user?._id.equals(targetPost.author._id);
 
-      if (!(isEditor || isAuthor)) {
-        const err = createError(401, 'Unauthorized to edit post');
-        return next(err);
-      } else {
-        next();
-      }
-    });
+    if (!(isEditor || isAuthor)) {
+      const err = createError(401, 'Unauthorized to edit post');
+      return next(err);
+    } else {
+      req.post = targetPost;
+      next();
+    }
+  });
 
   // Return list of all posts in database
   const get_posts = asyncHandler(async (req, res, next) => {
@@ -161,7 +161,7 @@ const postController = (() => {
 
   const edit_post = [
     // Check if current user has authorization to edit the post
-    checkAuthorization(),
+    checkAuthorization,
 
     // Validate and sanitize fields
     body('content', 'Content must not be empty').trim().notEmpty().escape(),
@@ -207,7 +207,7 @@ const postController = (() => {
 
   const edit_privacy = [
     // Check is user has authorization to edit post privacy
-    checkAuthorization(),
+    checkAuthorization,
 
     // Sanitize input
     body('is_private').trim().isBoolean(),

@@ -243,7 +243,7 @@ const commentController = (() => {
       const isAuthor = req.user?._id.equals(targetComment.author._id);
 
       if (!isAuthor) {
-        const err = createError(401, 'Unauthorized to delete comment');
+        const err = createError(403, 'Unauthorized to delete comment');
         return next(err);
       } else {
         // Delete the comment record
@@ -262,7 +262,7 @@ const commentController = (() => {
 
     // Check if current user exists
     if (!user) {
-      const err = createError(403);
+      const err = createError(401);
       return next(err);
     }
 
@@ -317,7 +317,7 @@ const commentController = (() => {
     asyncHandler(async (req, res, next) => {
       const user = req.user;
       if (!user) {
-        const err = createError(403);
+        const err = createError(401);
         return next(err);
       }
 
@@ -371,7 +371,7 @@ const commentController = (() => {
     asyncHandler(async (req, res, next) => {
       const user = req.user;
       if (!user) {
-        const err = createError(403);
+        const err = createError(401);
         return next(err);
       }
 
