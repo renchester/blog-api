@@ -17,6 +17,12 @@ declare global {
   }
 
   namespace Express {
+    interface Request {
+      user?: Express.User;
+      post?: any;
+      comment?: any;
+    }
+
     interface User {
       _id: Types.ObjectId;
       username: string;
@@ -25,10 +31,6 @@ declare global {
       last_name: string;
       is_admin: boolean;
       is_verified_author: boolean;
-    }
-
-    interface Post {
-      _id: Types.ObjectId;
     }
   }
 
@@ -39,9 +41,9 @@ declare global {
   type BlogCategory =
     | 'architecture'
     | 'art'
-    | 'interior design'
+    | 'interior-design'
     | 'lifestyle'
-    | 'style + fashion'
+    | 'style-fashion'
     | 'tech'
     | 'travel';
 
