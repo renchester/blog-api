@@ -15,7 +15,7 @@ const BlogPostSchema = new Schema<
     type: String,
     required: true,
     minlength: 3,
-    maxlength: 240,
+    maxlength: 80,
   },
   slug: {
     type: String,
@@ -36,8 +36,8 @@ const BlogPostSchema = new Schema<
     ref: 'User',
   },
   tags: {
-    type: [Schema.Types.ObjectId],
-    ref: 'Tag',
+    type: [String],
+    default: [],
   },
   edits: {
     type: [{ timestamp: Date }],
