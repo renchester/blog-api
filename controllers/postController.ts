@@ -7,7 +7,6 @@ import createError from 'http-errors';
 import userProjection from '../config/projections/userProjection';
 import postProjection from '../config/projections/postProjection';
 import BlogPost from '../models/blogPost';
-import TagModel from '../models/tag';
 
 const postController = (() => {
   const checkAuthorization = asyncHandler(async (req, res, next) => {
@@ -46,7 +45,6 @@ const postController = (() => {
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
       .populate('comments.author', userProjection)
-      .populate('tags', { __v: 0 })
       .exec();
 
     res.json({ posts: allPosts });
@@ -70,11 +68,11 @@ const postController = (() => {
 
     // Handle type of req.body.tag
     function (req: Request, res: Response, next: NextFunction) {
-      if (!(req.body.tag instanceof Array)) {
-        if (typeof req.body.tag === 'undefined') {
-          req.body.tag = [];
+      if (!(req.body.tags instanceof Array)) {
+        if (typeof req.body.tags === 'undefined') {
+          req.body.tags = [];
         } else {
-          req.body.tag = new Array(req.body.tag);
+          req.body.tags = new Array(req.body.tags);
         }
       }
 
@@ -82,12 +80,18 @@ const postController = (() => {
     },
 
     // Validate and sanitize fields
-    body('title', 'Title must not be empty').trim().notEmpty().escape(),
+    body('title', 'Title must not be empty')
+      .trim()
+      .notEmpty()
+      .isLength({ min: 3, max: 80 })
+      .escape(),
     body('content', 'Content must not be empty').trim().notEmpty().escape(),
-    body('tag.*').escape(),
+    body('tags').trim().toLowerCase().escape(),
     body('display_img.url').notEmpty().escape(),
+    body('display_img.owner').trim().notEmpty().escape(),
+    body('display_img.source').escape(),
     body('category', 'Category must not be empty').trim().notEmpty().escape(),
-    body('is_private').escape(),
+    body('is_private').isBoolean().escape(),
 
     // Process request after validation and sanitization
     asyncHandler(async (req, res, next) => {
@@ -121,7 +125,8 @@ const postController = (() => {
         content: req.body.content,
         comments: [],
         liked_by: [],
-        tags: req.body.tag,
+        tags: req.body.tags,
+        display_img: req.body.display_img,
         edits: [],
         category: req.body.category,
         is_private: req.body.is_private || false,
@@ -148,7 +153,7 @@ const postController = (() => {
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
-      .populate('tags', { __v: 0 })
+      .populate('comments.author', userProjection)
       .exec();
 
     if (post === null) {
@@ -279,21 +284,11 @@ const postController = (() => {
   ];
 
   const get_posts_by_tagname = asyncHandler(async (req, res, next) => {
-    const tag = await TagModel.findOne(
-      { name: req.params.tagName },
-      { __v: 0 },
-    );
-
-    if (!tag) {
-      const err = createError(404, 'Unable to find posts with this tagname');
-      return next(err);
-    }
-
-    const posts = await BlogPost.find({ tags: tag._id }, postProjection)
+    const posts = await BlogPost.find(
+      { tags: req.params.tagname },
+      postProjection,
+    )
       .populate('author', userProjection)
-      .populate('editors', userProjection)
-      .populate('liked_by', userProjection)
-      .populate('tags', { __v: 0 })
       .exec();
 
     res.json({
@@ -308,9 +303,6 @@ const postController = (() => {
       postProjection,
     )
       .populate('author', userProjection)
-      .populate('editors', userProjection)
-      .populate('liked_by', userProjection)
-      .populate('tags', { __v: 0 })
       .exec();
 
     res.json({
