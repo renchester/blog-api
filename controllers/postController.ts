@@ -40,14 +40,22 @@ const postController = (() => {
 
   // Return list of all posts in database
   const get_posts = asyncHandler(async (req, res, next) => {
+    const { limit = 10, page = 1 } = req.query;
+
+    const postCount = await BlogPost.countDocuments({});
+
     const allPosts = await BlogPost.find({}, postProjection)
+      .sort({ date_created: -1 })
+      .skip((+page - 1) * +limit)
+      .limit(+limit)
       .populate('author', userProjection)
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
       .populate('comments.author', userProjection)
+      .populate('comments.liked_by', userProjection)
       .exec();
 
-    res.json({ posts: allPosts });
+    res.header('X-total-count', postCount.toString()).json({ posts: allPosts });
   });
 
   const create_post = [
@@ -119,6 +127,7 @@ const postController = (() => {
       // Create new Post object with escaped data
       const blogPost = new BlogPost({
         title: req.body.title,
+        date_created: Date.now(),
         slug: slugify(req.body.title, slugifyOptions),
         author: user?._id,
         editors: [],
@@ -154,6 +163,7 @@ const postController = (() => {
       .populate('editors', userProjection)
       .populate('liked_by', userProjection)
       .populate('comments.author', userProjection)
+      .populate('comments.liked_by', userProjection)
       .exec();
 
     if (post === null) {
