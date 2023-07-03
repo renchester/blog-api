@@ -39,7 +39,7 @@ const checkAuthorization = () =>
     const isUser = req.user?._id.equals(targetUser._id);
 
     if (!isUser) {
-      const err = createError(401, 'Unauthorized to edit this field');
+      const err = createError(403, 'Unauthorized to edit this field');
       return next(err);
     } else {
       next();
@@ -193,7 +193,7 @@ const userController = (() => {
     async (req: Request, res: Response, next: NextFunction) => {
       const user = await User.findById(req.params.id, userProjection);
 
-      if (user === null) {
+      if (!user) {
         const err = createError(404, 'User not found');
         return next(err);
       }
@@ -226,7 +226,7 @@ const userController = (() => {
       // Get user data
       const user = await User.findById(req.params.id);
 
-      if (user === null) {
+      if (!user) {
         const err = createError(404, 'User not found');
         return next(err);
       }
@@ -416,7 +416,7 @@ const userController = (() => {
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
       const user = await User.findById(req.params.id);
 
-      if (user === null) {
+      if (!user) {
         const err = createError(404, 'User not found');
         return next(err);
       }
@@ -472,7 +472,7 @@ const userController = (() => {
       const isAdmin = req.user?.is_admin;
 
       if (!isAdmin) {
-        const err = createError(401, 'Unauthorized to delete user');
+        const err = createError(403, 'Unauthorized to delete user');
         return next(err);
       }
 

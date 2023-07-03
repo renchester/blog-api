@@ -168,7 +168,7 @@ const commentController = (() => {
       const isAuthor = req.user?._id.equals(comment.author._id);
 
       if (!isAuthor) {
-        const err = createError(401, 'Unauthorized to edit comment');
+        const err = createError(403, 'Unauthorized to edit comment');
         return next(err);
       } else {
         return next();

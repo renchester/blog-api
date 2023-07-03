@@ -85,7 +85,7 @@ const tagController = (() => {
       const isAdmin = req.user?.is_admin;
 
       if (!isAdmin) {
-        const err = createError(401, 'Unauthorized to edit tag');
+        const err = createError(403, 'Unauthorized to edit tag');
         return next(err);
       }
 
@@ -128,7 +128,7 @@ const tagController = (() => {
     const isAdmin = req.user?.is_admin;
 
     if (!isAdmin) {
-      const err = createError(401, 'Unauthorized to delete tag');
+      const err = createError(403, 'Unauthorized to delete tag');
       return next(err);
     }
 

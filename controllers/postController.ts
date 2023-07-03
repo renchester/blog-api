@@ -30,7 +30,7 @@ const postController = (() => {
     const isAuthor = req.user?._id.equals(targetPost.author._id);
 
     if (!(isEditor || isAuthor)) {
-      const err = createError(401, 'Unauthorized to edit post');
+      const err = createError(403, 'Unauthorized to edit post');
       return next(err);
     } else {
       req.post = targetPost;
@@ -177,7 +177,7 @@ const postController = (() => {
       .populate('comments.liked_by', userProjection)
       .exec();
 
-    if (post === null) {
+    if (!post) {
       const err = createError(404, 'Unable to find post');
       return next(err);
     }
@@ -298,7 +298,7 @@ const postController = (() => {
       const isAuthor = req.user?._id.equals(targetPost.author._id);
 
       if (!isAuthor) {
-        const err = createError(401, 'Unauthorized to delete post');
+        const err = createError(403, 'Unauthorized to delete post');
         return next(err);
       } else {
         next();
@@ -416,7 +416,7 @@ const postController = (() => {
     asyncHandler(async (req, res, next) => {
       const user = req.user;
       if (!user) {
-        const err = createError(403);
+        const err = createError(401);
         return next(err);
       }
 
@@ -469,7 +469,7 @@ const postController = (() => {
     asyncHandler(async (req, res, next) => {
       const user = req.user;
       if (!user) {
-        const err = createError(403);
+        const err = createError(401);
         return next(err);
       }
 
