@@ -55,7 +55,13 @@ const postController = (() => {
       .populate('comments.liked_by', userProjection)
       .exec();
 
-    res.header('X-total-count', postCount.toString()).json({ posts: allPosts });
+    res.header('X-total-count', postCount.toString()).json({
+      posts: allPosts,
+      success: true,
+      _links: {
+        self: `/api/posts?page=${page}&limit=${limit}`,
+      },
+    });
   });
 
   const create_post = [
@@ -145,12 +151,17 @@ const postController = (() => {
       const postLink = `/api/posts/${newPost.slug}`;
 
       // Send url of new post
-      res.status(201).location(postLink).json({
-        success: true,
-        message: 'Successfully created post',
-        post: newPost,
-        link: postLink,
-      });
+      res
+        .status(201)
+        .location(postLink)
+        .json({
+          success: true,
+          message: 'Successfully created post',
+          post: newPost,
+          _links: {
+            self: postLink,
+          },
+        });
     }),
   ];
 
@@ -171,7 +182,17 @@ const postController = (() => {
       return next(err);
     }
 
-    res.json({ post });
+    const tagLinks = post.tags.map((tag) => `/api/posts/tag/${tag}`);
+
+    res.json({
+      post,
+      success: true,
+      _links: {
+        self: `/api/posts/${post.slug}`,
+        category: `/api/posts/category/${post.category}`,
+        tags: tagLinks,
+      },
+    });
   });
 
   const edit_post = [
@@ -215,7 +236,9 @@ const postController = (() => {
         success: true,
         message: 'Successfully updated post content',
         post: targetPost,
-        link: postLink,
+        _links: {
+          self: postLink,
+        },
       });
     }),
   ];
@@ -252,7 +275,9 @@ const postController = (() => {
           success: true,
           message: `Successfully updated post privacy`,
           post,
-          link: postLink,
+          _links: {
+            self: postLink,
+          },
         });
       }
     }),
@@ -303,7 +328,11 @@ const postController = (() => {
 
     res.json({
       tag: req.params.tagname,
+      success: true,
       posts,
+      _links: {
+        self: `/api/posts/tags/${req.params.tagname}`,
+      },
     });
   });
 
@@ -317,7 +346,11 @@ const postController = (() => {
 
     res.json({
       category: req.params.category,
+      success: true,
       posts,
+      _links: {
+        self: `/api/posts/category/${req.params.category}`,
+      },
     });
   });
 
@@ -331,6 +364,7 @@ const postController = (() => {
 
     res.json({
       posts: newestPosts,
+      success: true,
     });
   });
 
@@ -338,7 +372,7 @@ const postController = (() => {
     const user = req.user;
 
     if (!user) {
-      const err = createError(403);
+      const err = createError(401);
       return next(err);
     }
 
@@ -366,8 +400,12 @@ const postController = (() => {
       }
 
       res.json({
-        post: `/api/posts/${post.slug}`,
+        success: true,
         likes: post.liked_by,
+        _links: {
+          self: `/api/posts/${post.slug}/likes`,
+          post: `/api/posts/${post.slug}`,
+        },
       });
     },
   ];
@@ -406,11 +444,17 @@ const postController = (() => {
         const postLink = `/api/posts/${req.params.slug}`;
 
         if (updatedPost) {
-          res.status(201).location(postLink).json({
-            success: true,
-            message: 'Successfully added a like to post',
-            link: postLink,
-          });
+          res
+            .status(201)
+            .location(postLink)
+            .json({
+              success: true,
+              message: 'Successfully added a like to post',
+              _links: {
+                self: `${postLink}/likes`,
+                post: postLink,
+              },
+            });
         } else {
           const err = createError(500);
           return next(err);
@@ -456,7 +500,10 @@ const postController = (() => {
           res.location(postLink).json({
             success: true,
             message: 'Successfully removed a like in post',
-            link: postLink,
+            _links: {
+              self: `${postLink}/likes`,
+              post: postLink,
+            },
           });
         } else {
           const err = createError(500);

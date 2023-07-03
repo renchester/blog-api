@@ -22,8 +22,12 @@ const commentController = (() => {
     }
 
     res.json({
-      post_link: `/api/posts/${targetPost.slug}`,
+      success: true,
       comments: targetPost.comments,
+      _links: {
+        self: `/api/posts/${targetPost.slug}/comments`,
+        post: `/api/posts/${targetPost.slug}`,
+      },
     });
   });
 
@@ -84,13 +88,19 @@ const commentController = (() => {
       const postLink = `/api/posts/${updatedPost.slug}`;
 
       // Send url of new comment
-      res.status(201).location(commentLink).json({
-        success: true,
-        message: 'Successfully created comment',
-        comment: newComment,
-        link: commentLink,
-        post_link: postLink,
-      });
+      res
+        .status(201)
+        .location(commentLink)
+        .json({
+          success: true,
+          message: 'Successfully created comment',
+          comment: newComment,
+          _links: {
+            post: postLink,
+            allComments: `${postLink}/comments`,
+            self: commentLink,
+          },
+        });
     }),
   ];
 
@@ -121,7 +131,15 @@ const commentController = (() => {
       return next(err);
     }
 
-    res.json({ comment });
+    res.json({
+      comment,
+      success: true,
+      _links: {
+        self: `/api/posts/${parentPost.slug}/comments/${comment?._id}`,
+        allComments: `/api/posts/${parentPost.slug}/comments`,
+        post: `/api/posts/${parentPost.slug}`,
+      },
+    });
   });
 
   const edit_comment = [
@@ -208,8 +226,11 @@ const commentController = (() => {
         success: true,
         message: 'Successfully updated comment',
         comment: updatedComment,
-        link: commentLink,
-        post_link: postLink,
+        _links: {
+          self: commentLink,
+          post: postLink,
+          allComments: `${postLink}/comments`,
+        },
       });
     }),
   ];
@@ -305,8 +326,13 @@ const commentController = (() => {
       }
 
       res.json({
-        comment: `/api/posts/${parentPost.slug}/comments/${targetComment._id}`,
+        success: true,
         likes: targetComment.liked_by,
+        _links: {
+          commentLikes: `/api/posts/${parentPost.slug}/comments/${targetComment._id}/likes`,
+          comment: `/api/posts/${parentPost.slug}/comments/${targetComment._id}`,
+          post: `/api/posts/${parentPost.slug}`,
+        },
       });
     },
   ];
@@ -349,13 +375,17 @@ const commentController = (() => {
           { comments: updatedPostComments },
           { runValidators: true, returnDocument: 'after' },
         );
-        const postLink = `/api/posts/${req.params.slug}/comments/${req.params.commentid}`;
+        const commentLink = `/api/posts/${req.params.slug}/comments/${req.params.commentid}`;
 
         if (updatedPost) {
-          res.location(postLink).json({
+          res.location(commentLink).json({
             success: true,
             message: 'Successfully added a like to comment',
-            link: postLink,
+            _links: {
+              commentLikes: `/api/posts/${parentPost.slug}/comments/${targetComment._id}/likes`,
+              comment: `/api/posts/${parentPost.slug}/comments/${targetComment._id}`,
+              post: `/api/posts/${parentPost.slug}`,
+            },
           });
         } else {
           const err = createError(500);
@@ -406,13 +436,17 @@ const commentController = (() => {
           { comments: updatedPostComments },
           { runValidators: true, returnDocument: 'after' },
         );
-        const postLink = `/api/posts/${req.params.slug}/comments/${req.params.commentid}`;
+        const commentLink = `/api/posts/${req.params.slug}/comments/${req.params.commentid}`;
 
         if (updatedPost) {
-          res.location(postLink).json({
+          res.location(commentLink).json({
             success: true,
             message: 'Successfully removed a like in comment',
-            link: postLink,
+            _links: {
+              commentLikes: `/api/posts/${parentPost.slug}/comments/${targetComment._id}/likes`,
+              comment: `/api/posts/${parentPost.slug}/comments/${targetComment._id}`,
+              post: `/api/posts/${parentPost.slug}`,
+            },
           });
         } else {
           const err = createError(500);

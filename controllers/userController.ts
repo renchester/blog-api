@@ -90,7 +90,13 @@ const userController = (() => {
           return next(err);
         }
 
-        res.json({ user, success: true });
+        res.json({
+          user,
+          success: true,
+          _links: {
+            self: `/api/users/${user._id}`,
+          },
+        });
       }
 
       if (email) {
@@ -101,7 +107,13 @@ const userController = (() => {
           return next(err);
         }
 
-        res.json({ user, success: true });
+        res.json({
+          user,
+          success: true,
+          _links: {
+            self: `/api/users/${user._id}`,
+          },
+        });
       }
 
       next();
@@ -113,7 +125,10 @@ const userController = (() => {
     asyncHandler(async (req: Request, res: Response) => {
       const allUsers = await User.find({}, userProjection).exec();
 
-      res.json({ users: allUsers, success: true });
+      res.json({
+        users: allUsers,
+        success: true,
+      });
     }),
   ];
 
@@ -166,7 +181,9 @@ const userController = (() => {
           .json({
             success: true,
             message: `Successfully created user`,
-            link: `/api/users/${newUser._id}`,
+            _links: {
+              self: `/api/users/${newUser._id}`,
+            },
           });
       }
     }),
@@ -181,7 +198,13 @@ const userController = (() => {
         return next(err);
       }
 
-      res.json({ user, success: true });
+      res.json({
+        user,
+        success: true,
+        _links: {
+          self: `/api/users/${user._id}`,
+        },
+      });
     },
   );
 
@@ -229,7 +252,9 @@ const userController = (() => {
         res.location(`/api/users/${user?._id}`).json({
           success: true,
           message: `Successfully updated user details`,
-          link: `/api/users/${req.params.id}`,
+          _links: {
+            self: `/api/users/${req.params.id}`,
+          },
         });
       }
     }),
@@ -262,7 +287,9 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated first name`,
-          link: `/api/users/${req.params.id}`,
+          _links: {
+            self: `/api/users/${req.params.id}`,
+          },
         });
       }
     }),
@@ -295,7 +322,9 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated last name`,
-          link: `/api/users/${req.params.id}`,
+          _links: {
+            self: `/api/users/${req.params.id}`,
+          },
         });
       }
     }),
@@ -328,7 +357,9 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated username`,
-          link: `/api/users/${req.params.id}`,
+          _links: {
+            self: `/api/users/${req.params.id}`,
+          },
         });
       }
     }),
@@ -361,7 +392,9 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated email`,
-          link: `/api/users/${req.params.id}`,
+          _links: {
+            self: `/api/users/${req.params.id}`,
+          },
         });
       }
     }),
@@ -425,7 +458,9 @@ const userController = (() => {
         res.location(`/api/users/${req.params.id}`).json({
           success: true,
           message: `Successfully updated password`,
-          link: `/api/users/${req.params.id}`,
+          _links: {
+            self: `/api/users/${req.params.id}`,
+          },
         });
       }
     }),
@@ -475,37 +510,14 @@ const userController = (() => {
       .populate('tags', { __v: 0 })
       .exec();
 
-    res.json({ posts });
+    res.json({
+      posts,
+      success: true,
+      _links: {
+        user: `/api/users/${req.params.id}`,
+      },
+    });
   });
-
-  // const get_user_by_username = asyncHandler(async (req, res, next) => {
-  //   const user = await User.findOne(
-  //     { username: req.params.username },
-  //     userProjection,
-  //   );
-
-  //   if (!user) {
-  //     const err = createError(404, 'User not found');
-  //     return next(err);
-  //   }
-
-  //   res.json({ user });
-  // });
-
-  // const get_user_by_email = asyncHandler(async (req, res, next) => {
-  //   const user = await User.findOne(
-  //     { email: req.params.email },
-  //     userProjection,
-  //   );
-  //   // console.log(user);
-
-  //   if (!user) {
-  //     const err = createError(404, 'User not found');
-  //     return next(err);
-  //   }
-
-  //   res.json({ user });
-  // });
 
   return {
     get_users,
@@ -519,8 +531,6 @@ const userController = (() => {
     update_password,
     delete_user,
     get_user_posts,
-    // get_user_by_username,
-    // get_user_by_email,
   };
 })();
 
